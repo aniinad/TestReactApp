@@ -6,7 +6,6 @@ import {
     Typography,
     Box
 } from '@mui/material';
-import axios from 'axios';
 import { DataFormProps, GridData } from '../types';
 
 const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
@@ -19,8 +18,8 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
+        setFormData((prevData: GridData) => ({
+            ...prevData,
             [name]: value
         }));
     };
@@ -29,11 +28,22 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            // Replace with your API endpoint
-            const response = await axios.put<GridData>(`https://api.example.com/data/${formData.id}`, formData);
-            onSubmit(response.data);
+            const response = await fetch('https://your-api-url.com/endpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const responseData = await response.json();
+            onSubmit(responseData);
         } catch (error) {
-            console.error('Error updating data:', error);
+            console.error('Error submitting form:', error);
         } finally {
             setIsSubmitting(false);
         }
