@@ -146,11 +146,23 @@ const DataGrid: React.FC = () => {
                     </div>
                 )}
 
-                <Dialog open={isNewDialogOpen} onClose={() => setIsNewDialogOpen(false)}>
+                <Dialog
+                    open={isNewDialogOpen}
+                    onClose={() => setIsNewDialogOpen(false)}
+                    maxWidth="md"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            width: '50%',
+                            maxHeight: '80vh',
+                            minHeight: '50vh'
+                        }
+                    }}
+                >
                     <DialogTitle>Add New Entry</DialogTitle>
                     <form onSubmit={handleNewSubmit}>
                         <DialogContent>
-                            <Stack spacing={2} sx={{ mt: 1 }}>
+                            <Stack spacing={3} sx={{ mt: 1 }}>
                                 <TextField
                                     name="name"
                                     label="Name"
@@ -158,6 +170,7 @@ const DataGrid: React.FC = () => {
                                     onChange={handleNewChange}
                                     fullWidth
                                     required
+                                    size="medium"
                                 />
                                 <TextField
                                     name="email"
@@ -166,6 +179,7 @@ const DataGrid: React.FC = () => {
                                     onChange={handleNewChange}
                                     fullWidth
                                     required
+                                    size="medium"
                                 />
                                 <TextField
                                     name="phone"
@@ -174,10 +188,11 @@ const DataGrid: React.FC = () => {
                                     onChange={handleNewChange}
                                     fullWidth
                                     required
+                                    size="medium"
                                 />
                             </Stack>
                         </DialogContent>
-                        <DialogActions>
+                        <DialogActions sx={{ p: 3 }}>
                             <Button onClick={() => setIsNewDialogOpen(false)}>Cancel</Button>
                             <Button type="submit" variant="contained">Create</Button>
                         </DialogActions>
