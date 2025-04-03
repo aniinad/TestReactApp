@@ -65,10 +65,12 @@ const DataGrid: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const createdData = await response.json();
-            setRowData(prev => [...prev, createdData]);
+            // Close the dialog and reset form
             setIsNewDialogOpen(false);
             setNewData({ name: '', email: '', phone: '' });
+
+            // Refresh the grid data
+            await fetchData();
         } catch (error) {
             console.error('Error creating new entry:', error);
         }
