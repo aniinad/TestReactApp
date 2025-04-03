@@ -4,7 +4,7 @@ import { GridApi, ColDef } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import axios from 'axios';
-import { Paper, Box, CircularProgress, Typography } from '@mui/material';
+import { Paper, Box, CircularProgress, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, TextField } from '@mui/material';
 import DataForm from './DataForm';
 import { GridData } from '../types';
 
@@ -14,6 +14,12 @@ const DataGrid: React.FC = () => {
     const [gridApi, setGridApi] = useState<GridApi | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [isNewDialogOpen, setIsNewDialogOpen] = useState<boolean>(false);
+    const [newData, setNewData] = useState<Partial<GridData>>({
+        name: '',
+        email: '',
+        phone: ''
+    });
 
     useEffect(() => {
         fetchData();
@@ -23,7 +29,6 @@ const DataGrid: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Replace with your API endpoint
             const response = await axios.get<GridData[]>('https://api.example.com/data');
             setRowData(response.data);
         } catch (error) {
@@ -31,6 +36,26 @@ const DataGrid: React.FC = () => {
             setError('Failed to load data. Please try again later.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleNewChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const { name, value } = e.target;
+        setNewData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleNewSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        e.preventDefault();
+        try {
+            const response = await axios.post<GridData>('https://api.example.com/data', newData);
+            setRowData(prev => [...prev, response.data]);
+            setIsNewDialogOpen(false);
+            setNewData({ name: '', email: '', phone: '' });
+        } catch (error) {
+            console.error('Error creating new entry:', error);
         }
     };
 
@@ -71,43 +96,27 @@ const DataGrid: React.FC = () => {
     return (
         <Box sx={{ display: 'flex', gap: 2, p: 2, height: 'calc(100vh - 100px)' }}>
             <Paper sx={{ flex: 2, height: '100%', position: 'relative' }}>
-                {isLoading ? (
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 2
-                        }}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">Master Data</Typography>
+                    <Button
+                        variant="contained"
+                        onClick={() => setIsNewDialogOpen(true)}
                     >
+                        Add New Entry
+                    </Button>
+                </Box>
+                {isLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                         <CircularProgress />
-                        <Typography>Loading data...</Typography>
+                        <Typography sx={{ ml: 2 }}>Loading data...</Typography>
                     </Box>
                 ) : error ? (
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            textAlign: 'center'
-                        }}
-                    >
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                         <Typography color="error">{error}</Typography>
-                        <Button
-                            variant="contained"
-                            onClick={fetchData}
-                            sx={{ mt: 2 }}
-                        >
-                            Retry
-                        </Button>
+                        <Button onClick={fetchData} sx={{ ml: 2 }}>Retry</Button>
                     </Box>
                 ) : (
-                    <div className="ag-theme-material" style={{ height: '100%', width: '100%' }}>
+                    <div className="ag-theme-material" style={{ height: 'calc(100% - 48px)', width: '100%' }}>
                         <AgGridReact
                             rowData={rowData}
                             columnDefs={columnDefs}
@@ -121,6 +130,44 @@ const DataGrid: React.FC = () => {
                         />
                     </div>
                 )}
+
+                <Dialog open={isNewDialogOpen} onClose={() => setIsNewDialogOpen(false)}>
+                    <DialogTitle>Add New Entry</DialogTitle>
+                    <form onSubmit={handleNewSubmit}>
+                        <DialogContent>
+                            <Stack spacing={2} sx={{ mt: 1 }}>
+                                <TextField
+                                    name="name"
+                                    label="Name"
+                                    value={newData.name}
+                                    onChange={handleNewChange}
+                                    fullWidth
+                                    required
+                                />
+                                <TextField
+                                    name="email"
+                                    label="Email"
+                                    value={newData.email}
+                                    onChange={handleNewChange}
+                                    fullWidth
+                                    required
+                                />
+                                <TextField
+                                    name="phone"
+                                    label="Phone"
+                                    value={newData.phone}
+                                    onChange={handleNewChange}
+                                    fullWidth
+                                    required
+                                />
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setIsNewDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit" variant="contained">Create</Button>
+                        </DialogActions>
+                    </form>
+                </Dialog>
             </Paper>
 
             {selectedRow && (
