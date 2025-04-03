@@ -3,7 +3,6 @@ import { AgGridReact } from 'ag-grid-react';
 import { GridApi, ColDef } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
-import axios from 'axios';
 import { Paper, Box, CircularProgress, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, Stack, TextField } from '@mui/material';
 import DataForm from './DataForm';
 import { GridData } from '../types';
@@ -29,8 +28,12 @@ const DataGrid: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await axios.get<GridData[]>('https://api.example.com/data');
-            setRowData(response.data);
+            const response = await fetch('https://api.example.com/data');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setRowData(data);
         } catch (error) {
             console.error('Error fetching data:', error);
             setError('Failed to load data. Please try again later.');
@@ -50,8 +53,20 @@ const DataGrid: React.FC = () => {
     const handleNewSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         try {
-            const response = await axios.post<GridData>('https://api.example.com/data', newData);
-            setRowData(prev => [...prev, response.data]);
+            const response = await fetch('https://api.example.com/data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const createdData = await response.json();
+            setRowData(prev => [...prev, createdData]);
             setIsNewDialogOpen(false);
             setNewData({ name: '', email: '', phone: '' });
         } catch (error) {
