@@ -28,15 +28,22 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            // Create a new object without the id field for the POST request
-            const { id, ...postData } = formData;
+            // Create the CsfbPoolAllocation object
+            const csfbPoolAllocation = {
+                // Map your form fields to the CsfbPoolAllocation properties
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                // Add other required properties for CsfbPoolAllocation
+            };
 
-            const response = await fetch('https://your-api-url.com/endpoint', {
-                method: 'POST',
+            // Make PUT request with AllocationSak parameter and CsfbPoolAllocation in body
+            const response = await fetch(`https://your-api-url.com/endpoint?allocationSak=${formData.id}`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(postData)
+                body: JSON.stringify(csfbPoolAllocation)
             });
 
             if (!response.ok) {
@@ -46,7 +53,7 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
             const responseData = await response.json();
             onSubmit(responseData);
         } catch (error) {
-            console.error('Error submitting form:', error);
+            console.error('Error updating data:', error);
         } finally {
             setIsSubmitting(false);
         }
