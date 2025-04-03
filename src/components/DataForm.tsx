@@ -5,7 +5,11 @@ import {
     Stack,
     Typography,
     Box,
-    Paper
+    Paper,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from 'ag-grid-community';
@@ -18,6 +22,11 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [childData, setChildData] = useState<ChildData[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isNewChildDialogOpen, setIsNewChildDialogOpen] = useState<boolean>(false);
+    const [newChildData, setNewChildData] = useState<Partial<ChildData>>({
+        name: '',
+        description: ''
+    });
 
     useEffect(() => {
         setFormData(data);
@@ -48,6 +57,41 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
             ...prevData,
             [name]: value
         }));
+    };
+
+    const handleNewChildChange = (e: ChangeEvent<HTMLInputElement>): void => {
+        const { name, value } = e.target;
+        setNewChildData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleNewChildSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`https://your-api-url.com/child-data?parentId=${formData.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newChildData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const createdChild = await response.json();
+            setChildData(prev => [...prev, createdChild]);
+            setIsNewChildDialogOpen(false);
+            setNewChildData({ name: '', description: '' });
+        } catch (error) {
+            console.error('Error creating child data:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -85,7 +129,6 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         { field: 'id', headerName: 'ID' },
         { field: 'name', headerName: 'Name' },
         { field: 'description', headerName: 'Description' },
-        // Add other child data columns as needed
     ];
 
     return (
@@ -142,9 +185,17 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
             </Paper>
 
             <Paper sx={{ p: 2, height: '400px' }}>
-                <Typography variant="h6" gutterBottom>
-                    Child Records
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                        Child Records
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        onClick={() => setIsNewChildDialogOpen(true)}
+                    >
+                        Add New Child
+                    </Button>
+                </Box>
                 {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                         <Typography>Loading child data...</Typography>
@@ -164,6 +215,38 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
                     </div>
                 )}
             </Paper>
+
+            <Dialog open={isNewChildDialogOpen} onClose={() => setIsNewChildDialogOpen(false)}>
+                <DialogTitle>Add New Child Record</DialogTitle>
+                <form onSubmit={handleNewChildSubmit}>
+                    <DialogContent>
+                        <Stack spacing={2} sx={{ mt: 1 }}>
+                            <TextField
+                                name="name"
+                                label="Name"
+                                value={newChildData.name}
+                                onChange={handleNewChildChange}
+                                fullWidth
+                                required
+                            />
+                            <TextField
+                                name="description"
+                                label="Description"
+                                value={newChildData.description}
+                                onChange={handleNewChildChange}
+                                fullWidth
+                                required
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setIsNewChildDialogOpen(false)}>Cancel</Button>
+                        <Button type="submit" variant="contained" disabled={isSubmitting}>
+                            Create
+                        </Button>
+                    </DialogActions>
+                </form>
+            </Dialog>
         </Box>
     );
 };
