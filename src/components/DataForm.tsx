@@ -4,17 +4,43 @@ import {
     Button,
     Stack,
     Typography,
-    Box
+    Box,
+    Paper
 } from '@mui/material';
-import { DataFormProps, GridData } from '../types';
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-material.css';
+import { DataFormProps, GridData, ChildData } from '../types';
 
 const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
     const [formData, setFormData] = useState<GridData>(data);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [childData, setChildData] = useState<ChildData[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     useEffect(() => {
         setFormData(data);
+        if (data.id) {
+            fetchChildData(data.id);
+        }
     }, [data]);
+
+    const fetchChildData = async (parentId: number): Promise<void> => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`https://your-api-url.com/child-data?parentId=${parentId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setChildData(data);
+        } catch (error) {
+            console.error('Error fetching child data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
@@ -28,16 +54,12 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            // Create the CsfbPoolAllocation object
             const csfbPoolAllocation = {
-                // Map your form fields to the CsfbPoolAllocation properties
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
-                // Add other required properties for CsfbPoolAllocation
             };
 
-            // Make PUT request with AllocationSak parameter and CsfbPoolAllocation in body
             const response = await fetch(`https://your-api-url.com/endpoint?allocationSak=${formData.id}`, {
                 method: 'PUT',
                 headers: {
@@ -59,57 +81,89 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         }
     };
 
-    return (
-        <Box component="form" onSubmit={handleSubmit}>
-            <Typography variant="h6" gutterBottom>
-                Edit Record
-            </Typography>
-            <Stack spacing={2}>
-                {/* Hidden primary key field */}
-                <input
-                    type="hidden"
-                    name="id"
-                    value={formData.id || ''}
-                />
-                <TextField
-                    name="name"
-                    label="Name"
-                    value={formData.name || ''}
-                    onChange={handleChange}
-                    fullWidth
-                />
-                <TextField
-                    name="email"
-                    label="Email"
-                    value={formData.email || ''}
-                    onChange={handleChange}
-                    fullWidth
-                />
-                <TextField
-                    name="phone"
-                    label="Phone"
-                    value={formData.phone || ''}
-                    onChange={handleChange}
-                    fullWidth
-                />
+    const childColumnDefs: ColDef[] = [
+        { field: 'id', headerName: 'ID' },
+        { field: 'name', headerName: 'Name' },
+        { field: 'description', headerName: 'Description' },
+        // Add other child data columns as needed
+    ];
 
-                <Stack direction="row" spacing={2} justifyContent="flex-end">
-                    <Button
-                        type="button"
-                        onClick={onCancel}
-                        variant="outlined"
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={isSubmitting}
-                    >
-                        Save Changes
-                    </Button>
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Paper sx={{ p: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                    Edit Record
+                </Typography>
+                <Stack spacing={2}>
+                    <input
+                        type="hidden"
+                        name="id"
+                        value={formData.id || ''}
+                    />
+                    <TextField
+                        name="name"
+                        label="Name"
+                        value={formData.name || ''}
+                        onChange={handleChange}
+                        fullWidth
+                    />
+                    <TextField
+                        name="email"
+                        label="Email"
+                        value={formData.email || ''}
+                        onChange={handleChange}
+                        fullWidth
+                    />
+                    <TextField
+                        name="phone"
+                        label="Phone"
+                        value={formData.phone || ''}
+                        onChange={handleChange}
+                        fullWidth
+                    />
+
+                    <Stack direction="row" spacing={2} justifyContent="flex-end">
+                        <Button
+                            type="button"
+                            onClick={onCancel}
+                            variant="outlined"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={isSubmitting}
+                        >
+                            Save Changes
+                        </Button>
+                    </Stack>
                 </Stack>
-            </Stack>
+            </Paper>
+
+            <Paper sx={{ p: 2, height: '400px' }}>
+                <Typography variant="h6" gutterBottom>
+                    Child Records
+                </Typography>
+                {isLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                        <Typography>Loading child data...</Typography>
+                    </Box>
+                ) : (
+                    <div className="ag-theme-material" style={{ height: '100%', width: '100%' }}>
+                        <AgGridReact
+                            rowData={childData}
+                            columnDefs={childColumnDefs}
+                            defaultColDef={{
+                                sortable: true,
+                                filter: true,
+                                resizable: true,
+                                flex: 1,
+                            }}
+                        />
+                    </div>
+                )}
+            </Paper>
         </Box>
     );
 };
