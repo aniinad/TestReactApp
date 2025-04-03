@@ -7,7 +7,13 @@ import { Paper, Box, CircularProgress, Typography, Button, Dialog, DialogTitle, 
 import DataForm from './DataForm';
 import { GridData } from '../types';
 
-const DataGrid: React.FC = () => {
+interface DataGridProps {
+    parentId?: number;
+    onRowSelect?: (row: GridData | null) => void;
+    isChildGrid?: boolean;
+}
+
+const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid = false }) => {
     const [rowData, setRowData] = useState<GridData[]>([]);
     const [selectedRow, setSelectedRow] = useState<GridData | null>(null);
     const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -17,18 +23,22 @@ const DataGrid: React.FC = () => {
     const [newData, setNewData] = useState<Partial<GridData>>({
         name: '',
         email: '',
-        phone: ''
+        phone: '',
+        parentId: parentId
     });
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [parentId]);
 
     const fetchData = async (): Promise<void> => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('https://api.example.com/data');
+            const url = isChildGrid
+                ? `https://api.example.com/data/children/${parentId}`
+                : 'https://api.example.com/data';
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -65,11 +75,8 @@ const DataGrid: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Close the dialog and reset form
             setIsNewDialogOpen(false);
-            setNewData({ name: '', email: '', phone: '' });
-
-            // Refresh the grid data
+            setNewData({ name: '', email: '', phone: '', parentId });
             await fetchData();
         } catch (error) {
             console.error('Error creating new entry:', error);
@@ -90,7 +97,11 @@ const DataGrid: React.FC = () => {
     const onSelectionChanged = (): void => {
         if (gridApi) {
             const selectedRows = gridApi.getSelectedRows();
-            setSelectedRow(selectedRows[0] || null);
+            const selectedRow = selectedRows[0] || null;
+            setSelectedRow(selectedRow);
+            if (onRowSelect) {
+                onRowSelect(selectedRow);
+            }
         }
     };
 
@@ -101,6 +112,9 @@ const DataGrid: React.FC = () => {
             )
         );
         setSelectedRow(null);
+        if (onRowSelect) {
+            onRowSelect(null);
+        }
     };
 
     const columnDefs: ColDef[] = [
@@ -114,7 +128,7 @@ const DataGrid: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2, p: 2, height: 'calc(100vh - 100px)' }}>
             <Paper sx={{ flex: 2, height: '100%', position: 'relative' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">Master Data</Typography>
+                    <Typography variant="h6">{isChildGrid ? 'Child Data' : 'Master Data'}</Typography>
                     <Button
                         variant="contained"
                         onClick={() => setIsNewDialogOpen(true)}
@@ -207,7 +221,12 @@ const DataGrid: React.FC = () => {
                     <DataForm
                         data={selectedRow}
                         onSubmit={handleDataUpdate}
-                        onCancel={() => setSelectedRow(null)}
+                        onCancel={() => {
+                            setSelectedRow(null);
+                            if (onRowSelect) {
+                                onRowSelect(null);
+                            }
+                        }}
                     />
                 </Paper>
             )}

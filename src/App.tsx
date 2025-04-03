@@ -1,9 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material';
-import CssBaseline from '@mui/material/CssBaseline';
-import Navbar from './components/Navbar';
-import DataGrid from './components/DataGrid';
+import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import DataTabs from './components/DataTabs';
 
 const theme = createTheme({
     palette: {
@@ -19,13 +17,9 @@ const App: React.FC = () => {
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Router>
-                <div className="App">
-                    <Navbar />
-                    <Routes>
-                        <Route path="/" element={<DataGrid />} />
-                        <Route path="/about" element={<div>About Page</div>} />
-                    </Routes>
-                </div>
+                <Routes>
+                    <Route path="/" element={<DataTabs />} />
+                </Routes>
             </Router>
         </ThemeProvider>
     );
