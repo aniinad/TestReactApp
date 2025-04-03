@@ -28,12 +28,15 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            // Create a new object without the id field for the POST request
+            const { id, ...postData } = formData;
+
             const response = await fetch('https://your-api-url.com/endpoint', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(postData)
             });
 
             if (!response.ok) {
@@ -55,6 +58,12 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
                 Edit Record
             </Typography>
             <Stack spacing={2}>
+                {/* Hidden primary key field */}
+                <input
+                    type="hidden"
+                    name="id"
+                    value={formData.id || ''}
+                />
                 <TextField
                     name="name"
                     label="Name"
