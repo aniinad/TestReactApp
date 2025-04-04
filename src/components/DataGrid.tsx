@@ -11,9 +11,10 @@ interface DataGridProps {
     parentId?: number;
     onRowSelect?: (row: GridData | null) => void;
     isChildGrid?: boolean;
+    title?: string;
 }
 
-const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid = false }) => {
+const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid = false, title = 'Data Grid' }) => {
     const [rowData, setRowData] = useState<GridData[]>([]);
     const [selectedRow, setSelectedRow] = useState<GridData | null>(null);
     const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -125,112 +126,95 @@ const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid 
     ];
 
     return (
-        <Box sx={{ display: 'flex', gap: 2, p: 2, height: 'calc(100vh - 100px)' }}>
-            <Paper sx={{ flex: 2, height: '100%', position: 'relative' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">{isChildGrid ? 'Child Data' : 'Master Data'}</Typography>
-                    <Button
-                        variant="contained"
-                        onClick={() => setIsNewDialogOpen(true)}
-                    >
-                        Add New Entry
-                    </Button>
-                </Box>
-                {isLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                        <CircularProgress />
-                        <Typography sx={{ ml: 2 }}>Loading data...</Typography>
-                    </Box>
-                ) : error ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                        <Typography color="error">{error}</Typography>
-                        <Button onClick={fetchData} sx={{ ml: 2 }}>Retry</Button>
-                    </Box>
-                ) : (
-                    <div className="ag-theme-material" style={{ height: 'calc(100% - 48px)', width: '100%' }}>
-                        <AgGridReact
-                            rowData={rowData}
-                            columnDefs={columnDefs}
-                            defaultColDef={defaultColDef}
-                            onGridReady={onGridReady}
-                            rowSelection="single"
-                            onSelectionChanged={onSelectionChanged}
-                            enableRangeSelection={true}
-                            groupSelectsChildren={true}
-                            animateRows={true}
-                        />
-                    </div>
-                )}
-
-                <Dialog
-                    open={isNewDialogOpen}
-                    onClose={() => setIsNewDialogOpen(false)}
-                    maxWidth="md"
-                    fullWidth
-                    PaperProps={{
-                        sx: {
-                            width: '50%',
-                            maxHeight: '80vh',
-                            minHeight: '50vh'
-                        }
-                    }}
+        <Paper sx={{ height: '100%', position: 'relative' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, p: 2 }}>
+                <Typography variant="h6">{title}</Typography>
+                <Button
+                    variant="contained"
+                    onClick={() => setIsNewDialogOpen(true)}
                 >
-                    <DialogTitle>Add New Entry</DialogTitle>
-                    <form onSubmit={handleNewSubmit}>
-                        <DialogContent>
-                            <Stack spacing={3} sx={{ mt: 1 }}>
-                                <TextField
-                                    name="name"
-                                    label="Name"
-                                    value={newData.name}
-                                    onChange={handleNewChange}
-                                    fullWidth
-                                    required
-                                    size="medium"
-                                />
-                                <TextField
-                                    name="email"
-                                    label="Email"
-                                    value={newData.email}
-                                    onChange={handleNewChange}
-                                    fullWidth
-                                    required
-                                    size="medium"
-                                />
-                                <TextField
-                                    name="phone"
-                                    label="Phone"
-                                    value={newData.phone}
-                                    onChange={handleNewChange}
-                                    fullWidth
-                                    required
-                                    size="medium"
-                                />
-                            </Stack>
-                        </DialogContent>
-                        <DialogActions sx={{ p: 3 }}>
-                            <Button onClick={() => setIsNewDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit" variant="contained">Create</Button>
-                        </DialogActions>
-                    </form>
-                </Dialog>
-            </Paper>
-
-            {selectedRow && (
-                <Paper sx={{ flex: 1, p: 2 }}>
-                    <DataForm
-                        data={selectedRow}
-                        onSubmit={handleDataUpdate}
-                        onCancel={() => {
-                            setSelectedRow(null);
-                            if (onRowSelect) {
-                                onRowSelect(null);
-                            }
-                        }}
+                    Add New Entry
+                </Button>
+            </Box>
+            {isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <CircularProgress />
+                    <Typography sx={{ ml: 2 }}>Loading data...</Typography>
+                </Box>
+            ) : error ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <Typography color="error">{error}</Typography>
+                    <Button onClick={fetchData} sx={{ ml: 2 }}>Retry</Button>
+                </Box>
+            ) : (
+                <div className="ag-theme-material" style={{ height: 'calc(100% - 48px)', width: '100%' }}>
+                    <AgGridReact
+                        rowData={rowData}
+                        columnDefs={columnDefs}
+                        defaultColDef={defaultColDef}
+                        onGridReady={onGridReady}
+                        rowSelection="single"
+                        onSelectionChanged={onSelectionChanged}
+                        enableRangeSelection={true}
+                        groupSelectsChildren={true}
+                        animateRows={true}
                     />
-                </Paper>
+                </div>
             )}
-        </Box>
+
+            <Dialog
+                open={isNewDialogOpen}
+                onClose={() => setIsNewDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        width: '50%',
+                        maxHeight: '80vh',
+                        minHeight: '50vh'
+                    }
+                }}
+            >
+                <DialogTitle>Add New Entry</DialogTitle>
+                <form onSubmit={handleNewSubmit}>
+                    <DialogContent>
+                        <Stack spacing={3} sx={{ mt: 1 }}>
+                            <TextField
+                                name="name"
+                                label="Name"
+                                value={newData.name}
+                                onChange={handleNewChange}
+                                fullWidth
+                                required
+                                size="medium"
+                            />
+                            <TextField
+                                name="email"
+                                label="Email"
+                                value={newData.email}
+                                onChange={handleNewChange}
+                                fullWidth
+                                required
+                                size="medium"
+                            />
+                            <TextField
+                                name="phone"
+                                label="Phone"
+                                value={newData.phone}
+                                onChange={handleNewChange}
+                                fullWidth
+                                required
+                                size="medium"
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3 }}>
+                        <Button onClick={() => setIsNewDialogOpen(false)}>Cancel</Button>
+                        <Button type="submit" variant="contained">Create</Button>
+                    </DialogActions>
+                </form>
+            </Dialog>
+        </Paper>
     );
 };
 

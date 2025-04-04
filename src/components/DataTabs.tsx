@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs, Tab, Box, Paper } from '@mui/material';
+import { Tabs, Tab, Box, Paper, Button, Stack } from '@mui/material';
 import DataGrid from './DataGrid';
 import { GridData } from '../types';
 
@@ -40,49 +40,109 @@ const DataTabs: React.FC = () => {
 
     const handleMasterRowSelect = (row: GridData | null) => {
         setSelectedMasterRow(row);
-        // If a row is selected in master grid, switch to child grid tab
+    };
+
+    const handleChildRowSelect = (row: GridData | null) => {
+        setSelectedChildRow(row);
+        // Switch to second tab when a child row is selected
         if (row) {
             setTabValue(1);
         }
     };
 
-    const handleChildRowSelect = (row: GridData | null) => {
-        setSelectedChildRow(row);
-        // If a row is selected in child grid, switch to details tab
-        if (row) {
-            setTabValue(2);
+    const handleBack = () => {
+        if (tabValue === 1) {
+            setTabValue(0);
+            setSelectedChildRow(null);
         }
     };
 
     return (
         <Paper sx={{ width: '100%', height: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={handleTabChange} aria-label="data tabs">
-                    <Tab label="Master Grid" />
-                    <Tab label="Child Grid" disabled={!selectedMasterRow} />
-                    <Tab label="Details" disabled={!selectedChildRow} />
-                </Tabs>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 1 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleBack}
+                        disabled={tabValue === 0}
+                    >
+                        Back
+                    </Button>
+                    <Tabs
+                        value={tabValue}
+                        onChange={handleTabChange}
+                        aria-label="data tabs"
+                        sx={{ flexGrow: 1 }}
+                    >
+                        <Tab label="Master & Child Data" />
+                        <Tab label="Child & Grandchild Data" disabled={!selectedChildRow} />
+                    </Tabs>
+                </Stack>
             </Box>
             <TabPanel value={tabValue} index={0}>
-                <DataGrid
-                    onRowSelect={handleMasterRowSelect}
-                    isChildGrid={false}
-                />
+                <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
+                    {/* Master Grid Section */}
+                    <Box sx={{ flex: 2 }}>
+                        <DataGrid
+                            onRowSelect={handleMasterRowSelect}
+                            isChildGrid={false}
+                            title="Master Data"
+                        />
+                    </Box>
+                    {/* Child Grid and Form Section */}
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
+                                <DataForm
+                                    data={selectedMasterRow}
+                                    onSubmit={(updatedData) => {
+                                        setSelectedMasterRow(updatedData);
+                                    }}
+                                    onCancel={() => setSelectedMasterRow(null)}
+                                />
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        parentId={selectedMasterRow.id}
+                                        onRowSelect={handleChildRowSelect}
+                                        isChildGrid={true}
+                                        title="Child Data"
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
-                {selectedMasterRow && (
-                    <DataGrid
-                        parentId={selectedMasterRow.id}
-                        onRowSelect={handleChildRowSelect}
-                        isChildGrid={true}
-                    />
-                )}
-            </TabPanel>
-            <TabPanel value={tabValue} index={2}>
                 {selectedChildRow && (
-                    <Box>
-                        <h2>Details</h2>
-                        <pre>{JSON.stringify(selectedChildRow, null, 2)}</pre>
+                    <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
+                        {/* Child Grid Section */}
+                        <Box sx={{ flex: 2 }}>
+                            <DataGrid
+                                parentId={selectedMasterRow?.id}
+                                onRowSelect={handleChildRowSelect}
+                                isChildGrid={true}
+                                title="Child Data"
+                            />
+                        </Box>
+                        {/* Grandchild Grid and Form Section */}
+                        <Box sx={{ flex: 1 }}>
+                            <DataForm
+                                data={selectedChildRow}
+                                onSubmit={(updatedData) => {
+                                    setSelectedChildRow(updatedData);
+                                }}
+                                onCancel={() => setSelectedChildRow(null)}
+                            />
+                            <Box sx={{ mt: 2 }}>
+                                <DataGrid
+                                    parentId={selectedChildRow.id}
+                                    onRowSelect={() => { }}
+                                    isChildGrid={true}
+                                    title="Grandchild Data"
+                                />
+                            </Box>
+                        </Box>
                     </Box>
                 )}
             </TabPanel>
