@@ -101,6 +101,7 @@ const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid 
             const selectedRow = selectedRows[0] || null;
             setSelectedRow(selectedRow);
             if (onRowSelect) {
+                console.log('Row selected:', selectedRow);
                 onRowSelect(selectedRow);
             }
         }

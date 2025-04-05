@@ -43,9 +43,11 @@ const DataTabs: React.FC = () => {
     };
 
     const handleChildRowSelect = (row: GridData | null) => {
+        console.log('Child row selected:', row); // Debug log
         setSelectedChildRow(row);
         // Switch to second tab when a child row is selected
         if (row) {
+            console.log('Switching to tab 1'); // Debug log
             setTabValue(1);
         }
     };
