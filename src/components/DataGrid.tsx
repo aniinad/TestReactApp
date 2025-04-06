@@ -13,6 +13,7 @@ interface DataGridProps {
     isChildGrid?: boolean;
     title?: string;
     apiEndpoint?: string;
+    columnDefs?: ColDef[];
 }
 
 const DataGrid: React.FC<DataGridProps> = ({
@@ -20,7 +21,8 @@ const DataGrid: React.FC<DataGridProps> = ({
     onRowSelect,
     isChildGrid = false,
     title = 'Data Grid',
-    apiEndpoint
+    apiEndpoint,
+    columnDefs: propColumnDefs
 }) => {
     const [rowData, setRowData] = useState<GridData[]>([]);
     const [selectedRow, setSelectedRow] = useState<GridData | null>(null);
@@ -138,7 +140,8 @@ const DataGrid: React.FC<DataGridProps> = ({
         }
     };
 
-    const columnDefs: ColDef[] = [
+    // Use the provided columnDefs or fall back to default
+    const columnDefs: ColDef[] = propColumnDefs || [
         { field: 'id', headerName: 'ID', checkboxSelection: true },
         { field: 'name', headerName: 'Name' },
         { field: 'email', headerName: 'Email' },
