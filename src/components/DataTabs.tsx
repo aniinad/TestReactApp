@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Tabs, Tab, Box, Paper, Button, Stack } from '@mui/material';
+import { Tabs, Tab, Box, Paper } from '@mui/material';
 import DataGrid from './DataGrid';
+import DataForm from './DataForm';
 import { GridData } from '../types';
 
 interface TabPanelProps {
@@ -32,54 +33,44 @@ function TabPanel(props: TabPanelProps) {
 const DataTabs: React.FC = () => {
     const [tabValue, setTabValue] = useState(0);
     const [selectedMasterRow, setSelectedMasterRow] = useState<GridData | null>(null);
-    const [selectedChildRow, setSelectedChildRow] = useState<GridData | null>(null);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
+        // Clear selected row when changing tabs
+        setSelectedMasterRow(null);
     };
 
     const handleMasterRowSelect = (row: GridData | null) => {
         setSelectedMasterRow(row);
     };
 
-    const handleChildRowSelect = (row: GridData | null) => {
-        console.log('Child row selected:', row); // Debug log
-        setSelectedChildRow(row);
-        // Switch to second tab when a child row is selected
-        if (row) {
-            console.log('Switching to tab 1'); // Debug log
-            setTabValue(1);
-        }
-    };
-
-    const handleBack = () => {
-        if (tabValue === 1) {
-            setTabValue(0);
-            setSelectedChildRow(null);
+    // Function to get the API endpoint based on the current tab
+    const getMasterGridEndpoint = (tabIndex: number): string => {
+        switch (tabIndex) {
+            case 0:
+                return 'https://api.example.com/data/type1';
+            case 1:
+                return 'https://api.example.com/data/type2';
+            case 2:
+                return 'https://api.example.com/data/type3';
+            default:
+                return 'https://api.example.com/data';
         }
     };
 
     return (
         <Paper sx={{ width: '100%', height: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ p: 1 }}>
-                    <Button
-                        variant="outlined"
-                        onClick={handleBack}
-                        disabled={tabValue === 0}
-                    >
-                        Back
-                    </Button>
-                    <Tabs
-                        value={tabValue}
-                        onChange={handleTabChange}
-                        aria-label="data tabs"
-                        sx={{ flexGrow: 1 }}
-                    >
-                        <Tab label="Master & Child Data" />
-                        <Tab label="Child & Grandchild Data" disabled={!selectedChildRow} />
-                    </Tabs>
-                </Stack>
+                <Tabs
+                    value={tabValue}
+                    onChange={handleTabChange}
+                    aria-label="data tabs"
+                    sx={{ flexGrow: 1 }}
+                >
+                    <Tab label="Type 1 Data" />
+                    <Tab label="Type 2 Data" />
+                    <Tab label="Type 3 Data" />
+                </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
                 <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
@@ -88,10 +79,11 @@ const DataTabs: React.FC = () => {
                         <DataGrid
                             onRowSelect={handleMasterRowSelect}
                             isChildGrid={false}
-                            title="Master Data"
+                            title="Type 1 Master Data"
+                            apiEndpoint={getMasterGridEndpoint(0)}
                         />
                     </Box>
-                    {/* Child Grid and Form Section */}
+                    {/* Form and Child Grid Section */}
                     <Box sx={{ flex: 1 }}>
                         {selectedMasterRow && (
                             <>
@@ -105,7 +97,7 @@ const DataTabs: React.FC = () => {
                                 <Box sx={{ mt: 2 }}>
                                     <DataGrid
                                         parentId={selectedMasterRow.id}
-                                        onRowSelect={handleChildRowSelect}
+                                        onRowSelect={() => { }}
                                         isChildGrid={true}
                                         title="Child Data"
                                     />
@@ -116,37 +108,74 @@ const DataTabs: React.FC = () => {
                 </Box>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
-                {selectedChildRow && (
-                    <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
-                        {/* Child Grid Section */}
-                        <Box sx={{ flex: 2 }}>
-                            <DataGrid
-                                parentId={selectedMasterRow?.id}
-                                onRowSelect={handleChildRowSelect}
-                                isChildGrid={true}
-                                title="Child Data"
-                            />
-                        </Box>
-                        {/* Grandchild Grid and Form Section */}
-                        <Box sx={{ flex: 1 }}>
-                            <DataForm
-                                data={selectedChildRow}
-                                onSubmit={(updatedData) => {
-                                    setSelectedChildRow(updatedData);
-                                }}
-                                onCancel={() => setSelectedChildRow(null)}
-                            />
-                            <Box sx={{ mt: 2 }}>
-                                <DataGrid
-                                    parentId={selectedChildRow.id}
-                                    onRowSelect={() => { }}
-                                    isChildGrid={true}
-                                    title="Grandchild Data"
-                                />
-                            </Box>
-                        </Box>
+                <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
+                    {/* Master Grid Section */}
+                    <Box sx={{ flex: 2 }}>
+                        <DataGrid
+                            onRowSelect={handleMasterRowSelect}
+                            isChildGrid={false}
+                            title="Type 2 Master Data"
+                            apiEndpoint={getMasterGridEndpoint(1)}
+                        />
                     </Box>
-                )}
+                    {/* Form and Child Grid Section */}
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
+                                <DataForm
+                                    data={selectedMasterRow}
+                                    onSubmit={(updatedData) => {
+                                        setSelectedMasterRow(updatedData);
+                                    }}
+                                    onCancel={() => setSelectedMasterRow(null)}
+                                />
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        parentId={selectedMasterRow.id}
+                                        onRowSelect={() => { }}
+                                        isChildGrid={true}
+                                        title="Child Data"
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
+            </TabPanel>
+            <TabPanel value={tabValue} index={2}>
+                <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 150px)' }}>
+                    {/* Master Grid Section */}
+                    <Box sx={{ flex: 2 }}>
+                        <DataGrid
+                            onRowSelect={handleMasterRowSelect}
+                            isChildGrid={false}
+                            title="Type 3 Master Data"
+                            apiEndpoint={getMasterGridEndpoint(2)}
+                        />
+                    </Box>
+                    {/* Form and Child Grid Section */}
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
+                                <DataForm
+                                    data={selectedMasterRow}
+                                    onSubmit={(updatedData) => {
+                                        setSelectedMasterRow(updatedData);
+                                    }}
+                                    onCancel={() => setSelectedMasterRow(null)}
+                                />
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        parentId={selectedMasterRow.id}
+                                        onRowSelect={() => { }}
+                                        isChildGrid={true}
+                                        title="Child Data"
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
             </TabPanel>
         </Paper>
     );

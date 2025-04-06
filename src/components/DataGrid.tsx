@@ -12,9 +12,16 @@ interface DataGridProps {
     onRowSelect?: (row: GridData | null) => void;
     isChildGrid?: boolean;
     title?: string;
+    apiEndpoint?: string;
 }
 
-const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid = false, title = 'Data Grid' }) => {
+const DataGrid: React.FC<DataGridProps> = ({
+    parentId,
+    onRowSelect,
+    isChildGrid = false,
+    title = 'Data Grid',
+    apiEndpoint
+}) => {
     const [rowData, setRowData] = useState<GridData[]>([]);
     const [selectedRow, setSelectedRow] = useState<GridData | null>(null);
     const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -30,15 +37,16 @@ const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid 
 
     useEffect(() => {
         fetchData();
-    }, [parentId]);
+    }, [parentId, apiEndpoint]);
 
     const fetchData = async (): Promise<void> => {
         setIsLoading(true);
         setError(null);
         try {
-            const url = isChildGrid
+            const url = apiEndpoint || (isChildGrid
                 ? `https://api.example.com/data/children/${parentId}`
-                : 'https://api.example.com/data';
+                : 'https://api.example.com/data');
+
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,7 +72,9 @@ const DataGrid: React.FC<DataGridProps> = ({ parentId, onRowSelect, isChildGrid 
     const handleNewSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         try {
-            const response = await fetch('https://api.example.com/data', {
+            const url = apiEndpoint || 'https://api.example.com/data';
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
