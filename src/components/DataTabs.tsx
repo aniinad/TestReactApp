@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Tab, Tabs, Paper, Grid } from '@mui/material';
+import { Box, Tab, Tabs, Paper, Grid as MuiGrid } from '@mui/material';
 import DataGrid from './DataGrid';
 import DataForm from './DataForm';
 import { GridData } from '../types';
@@ -117,97 +117,97 @@ const DataTabs: React.FC = () => {
                 </Tabs>
             </Box>
             <TabPanel value={activeTab} index={0}>
-                <Grid container spacing={2} sx={{ height: '100%' }}>
-                    <Grid item xs={12} md={6}>
+                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
+                    <MuiGrid item xs={12} md={6}>
                         <DataGrid
                             apiEndpoint={getMasterGridEndpoint(0)}
                             onRowSelect={handleMasterRowSelect}
                             title="Type 1 Data"
                             columnDefs={getColumnDefs(0)}
                         />
-                    </Grid>
+                    </MuiGrid>
                     {selectedMasterRow && (
                         <>
-                            <Grid item xs={12} md={6}>
+                            <MuiGrid item xs={12} md={6}>
                                 <DataForm
                                     data={selectedMasterRow}
                                     onSubmit={handleDataUpdate}
                                     onCancel={() => setSelectedMasterRow(null)}
                                 />
-                            </Grid>
-                            <Grid item xs={12}>
+                            </MuiGrid>
+                            <MuiGrid item xs={12}>
                                 <DataGrid
                                     parentId={selectedMasterRow.id}
                                     onRowSelect={handleChildRowSelect}
                                     isChildGrid={true}
                                     title="Child Data"
                                 />
-                            </Grid>
+                            </MuiGrid>
                         </>
                     )}
-                </Grid>
+                </MuiGrid>
             </TabPanel>
             <TabPanel value={activeTab} index={1}>
-                <Grid container spacing={2} sx={{ height: '100%' }}>
-                    <Grid item xs={12} md={6}>
+                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
+                    <MuiGrid item xs={12} md={6}>
                         <DataGrid
                             apiEndpoint={getMasterGridEndpoint(1)}
                             onRowSelect={handleMasterRowSelect}
                             title="Type 2 Data"
                             columnDefs={getColumnDefs(1)}
                         />
-                    </Grid>
+                    </MuiGrid>
                     {selectedMasterRow && (
                         <>
-                            <Grid item xs={12} md={6}>
+                            <MuiGrid item xs={12} md={6}>
                                 <DataForm
                                     data={selectedMasterRow}
                                     onSubmit={handleDataUpdate}
                                     onCancel={() => setSelectedMasterRow(null)}
                                 />
-                            </Grid>
-                            <Grid item xs={12}>
+                            </MuiGrid>
+                            <MuiGrid item xs={12}>
                                 <DataGrid
                                     parentId={selectedMasterRow.id}
                                     onRowSelect={handleChildRowSelect}
                                     isChildGrid={true}
                                     title="Child Data"
                                 />
-                            </Grid>
+                            </MuiGrid>
                         </>
                     )}
-                </Grid>
+                </MuiGrid>
             </TabPanel>
             <TabPanel value={activeTab} index={2}>
-                <Grid container spacing={2} sx={{ height: '100%' }}>
-                    <Grid item xs={12} md={6}>
+                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
+                    <MuiGrid item xs={12} md={6}>
                         <DataGrid
                             apiEndpoint={getMasterGridEndpoint(2)}
                             onRowSelect={handleMasterRowSelect}
                             title="Type 3 Data"
                             columnDefs={getColumnDefs(2)}
                         />
-                    </Grid>
+                    </MuiGrid>
                     {selectedMasterRow && (
                         <>
-                            <Grid item xs={12} md={6}>
+                            <MuiGrid item xs={12} md={6}>
                                 <DataForm
                                     data={selectedMasterRow}
                                     onSubmit={handleDataUpdate}
                                     onCancel={() => setSelectedMasterRow(null)}
                                 />
-                            </Grid>
-                            <Grid item xs={12}>
+                            </MuiGrid>
+                            <MuiGrid item xs={12}>
                                 <DataGrid
                                     parentId={selectedMasterRow.id}
                                     onRowSelect={handleChildRowSelect}
                                     isChildGrid={true}
                                     title="Child Data"
                                 />
-                            </Grid>
+                            </MuiGrid>
                         </>
                     )}
-                </Grid>
+                </MuiGrid>
             </TabPanel>
         </Box>
     );
