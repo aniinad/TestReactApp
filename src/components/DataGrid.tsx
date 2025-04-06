@@ -36,6 +36,13 @@ const DataGrid: React.FC<DataGridProps> = ({
     });
 
     useEffect(() => {
+        if (onRowSelect) {
+            console.log('Selected row changed, calling onRowSelect with:', selectedRow);
+            onRowSelect(selectedRow);
+        }
+    }, [selectedRow, onRowSelect]);
+
+    useEffect(() => {
         fetchData();
     }, [parentId, apiEndpoint]);
 
@@ -108,12 +115,14 @@ const DataGrid: React.FC<DataGridProps> = ({
     const onSelectionChanged = (): void => {
         if (gridApi) {
             const selectedRows = gridApi.getSelectedRows();
+            console.log('Selected rows from grid:', selectedRows);
             const selectedRow = selectedRows[0] || null;
+            console.log('First selected row:', selectedRow);
+
+            // Just update the local state, useEffect will handle the callback
             setSelectedRow(selectedRow);
-            if (onRowSelect) {
-                console.log('Row selected:', selectedRow);
-                onRowSelect(selectedRow);
-            }
+        } else {
+            console.log('Grid API is not available');
         }
     };
 
