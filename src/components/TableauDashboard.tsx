@@ -16,14 +16,23 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
     const containerRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [apiLoaded, setApiLoaded] = useState(false);
 
     useEffect(() => {
+        // Check if Tableau API is already loaded
+        if (window.tableau) {
+            setApiLoaded(true);
+            createViz();
+            return;
+        }
+
         // Load the Tableau JavaScript API
         const script = document.createElement('script');
         script.src = 'https://public.tableau.com/javascripts/api/tableau-2.min.js';
         script.async = true;
         script.onload = () => {
             console.log('Tableau API loaded successfully');
+            setApiLoaded(true);
             createViz();
         };
         script.onerror = () => {
@@ -39,13 +48,18 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
     }, [dashboardUrl]);
 
     const createViz = () => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || !apiLoaded) return;
 
         try {
             console.log('Creating Tableau visualization with URL:', dashboardUrl);
 
             // Clear any existing content
             containerRef.current.innerHTML = '';
+
+            // Make sure tableau API is available
+            if (!window.tableau || !window.tableau.Viz) {
+                throw new Error('Tableau API not properly loaded');
+            }
 
             // Create the visualization
             const viz = new window.tableau.Viz(
@@ -79,6 +93,13 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
             setLoading(false);
         }
     };
+
+    // Recreate viz when API is loaded
+    useEffect(() => {
+        if (apiLoaded) {
+            createViz();
+        }
+    }, [apiLoaded]);
 
     return (
         <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
