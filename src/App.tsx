@@ -5,6 +5,9 @@ import Navbar from './components/Navbar';
 import DataTabs from './components/DataTabs';
 import TableauDashboard from './components/TableauDashboard';
 
+// Replace this URL with your own Tableau dashboard URL
+const TABLEAU_DASHBOARD_URL = 'https://your-tableau-server.com/views/YourDashboard/YourView';
+
 const App: React.FC = () => {
     return (
         <Router>
@@ -19,8 +22,8 @@ const App: React.FC = () => {
                             path="/tableau"
                             element={
                                 <TableauDashboard
-                                    dashboardUrl="https://public.tableau.com/views/Superstore/Overview"
-                                    title="Sales Dashboard"
+                                    dashboardUrl={TABLEAU_DASHBOARD_URL}
+                                    title="Your Custom Dashboard"
                                 />
                             }
                         />
