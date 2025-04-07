@@ -18,34 +18,39 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
     const [error, setError] = useState<string | null>(null);
     const [apiLoaded, setApiLoaded] = useState(false);
 
+    // Check if Tableau API is available
     useEffect(() => {
-        // Check if Tableau API is already loaded
-        if (window.tableau) {
-            setApiLoaded(true);
-            createViz();
+        const checkTableauAPI = () => {
+            if (window.tableau) {
+                console.log('Tableau API already available');
+                setApiLoaded(true);
+                return true;
+            }
+            return false;
+        };
+
+        // Check immediately
+        if (checkTableauAPI()) {
             return;
         }
 
-        // Load the Tableau Embedding API v3
-        const script = document.createElement('script');
-        script.src = 'https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js';
-        script.async = true;
-        script.onload = () => {
-            console.log('Tableau Embedding API v3 loaded successfully');
-            setApiLoaded(true);
-            createViz();
-        };
-        script.onerror = () => {
-            console.error('Failed to load Tableau Embedding API v3');
-            setError('Failed to load Tableau visualization. Please check your internet connection.');
-            setLoading(false);
-        };
-        document.body.appendChild(script);
+        // If not available, set up a polling mechanism
+        const intervalId = setInterval(() => {
+            if (checkTableauAPI()) {
+                clearInterval(intervalId);
+            }
+        }, 500);
 
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, [dashboardUrl]);
+        // Clean up interval on unmount
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // Create visualization when API is loaded or URL changes
+    useEffect(() => {
+        if (apiLoaded && containerRef.current) {
+            createViz();
+        }
+    }, [apiLoaded, dashboardUrl]);
 
     const createViz = async () => {
         if (!containerRef.current || !apiLoaded) return;
@@ -62,42 +67,71 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
             }
 
             // Create the visualization using the new Embedding API v3
-            const viz = await window.tableau.VizManager.createViz({
-                ref: containerRef.current,
-                src: dashboardUrl,
-                width: '100%',
-                height: '600px',
-                hideTabs: false,
-                hideToolbar: false,
-                onFirstInteractive: () => {
-                    console.log('Tableau visualization is interactive');
-                    setLoading(false);
-                },
-                onError: (error: any) => {
-                    console.error('Tableau visualization error:', error);
-                    setError(`Error loading visualization: ${error.message || 'Unknown error'}`);
-                    setLoading(false);
-                }
-            });
+            try {
+                // Try the new API first
+                const viz = await window.tableau.VizManager.createViz({
+                    ref: containerRef.current,
+                    src: dashboardUrl,
+                    width: '100%',
+                    height: '600px',
+                    hideTabs: false,
+                    hideToolbar: false,
+                    onFirstInteractive: () => {
+                        console.log('Tableau visualization is interactive');
+                        setLoading(false);
+                    },
+                    onError: (error: any) => {
+                        console.error('Tableau visualization error:', error);
+                        setError(`Error loading visualization: ${error.message || 'Unknown error'}`);
+                        setLoading(false);
+                    }
+                });
 
-            return () => {
-                if (viz) {
-                    viz.dispose();
+                return () => {
+                    if (viz) {
+                        viz.dispose();
+                    }
+                };
+            } catch (apiError) {
+                console.error('Error with new API, trying fallback:', apiError);
+
+                // Fallback to the older API if the new one fails
+                if (window.tableau.Viz) {
+                    const viz = new window.tableau.Viz(
+                        containerRef.current,
+                        dashboardUrl,
+                        {
+                            width: '100%',
+                            height: '600px',
+                            hideTabs: false,
+                            hideToolbar: false,
+                            onFirstInteractive: () => {
+                                console.log('Tableau visualization is interactive (fallback)');
+                                setLoading(false);
+                            },
+                            onError: (error: any) => {
+                                console.error('Tableau visualization error (fallback):', error);
+                                setError(`Error loading visualization: ${error.message || 'Unknown error'}`);
+                                setLoading(false);
+                            }
+                        }
+                    );
+
+                    return () => {
+                        if (viz) {
+                            viz.dispose();
+                        }
+                    };
+                } else {
+                    throw new Error('Neither Tableau API version is available');
                 }
-            };
+            }
         } catch (err) {
             console.error('Error creating Tableau visualization:', err);
             setError(`Error creating visualization: ${err instanceof Error ? err.message : 'Unknown error'}`);
             setLoading(false);
         }
     };
-
-    // Recreate viz when API is loaded
-    useEffect(() => {
-        if (apiLoaded) {
-            createViz();
-        }
-    }, [apiLoaded]);
 
     return (
         <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
