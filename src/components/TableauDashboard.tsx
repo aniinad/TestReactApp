@@ -26,17 +26,17 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
             return;
         }
 
-        // Load the Tableau JavaScript API
+        // Load the Tableau Embedding API v3
         const script = document.createElement('script');
-        script.src = 'https://public.tableau.com/javascripts/api/tableau-2.min.js';
+        script.src = 'https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js';
         script.async = true;
         script.onload = () => {
-            console.log('Tableau API loaded successfully');
+            console.log('Tableau Embedding API v3 loaded successfully');
             setApiLoaded(true);
             createViz();
         };
         script.onerror = () => {
-            console.error('Failed to load Tableau API');
+            console.error('Failed to load Tableau Embedding API v3');
             setError('Failed to load Tableau visualization. Please check your internet connection.');
             setLoading(false);
         };
@@ -47,7 +47,7 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
         };
     }, [dashboardUrl]);
 
-    const createViz = () => {
+    const createViz = async () => {
         if (!containerRef.current || !apiLoaded) return;
 
         try {
@@ -57,30 +57,28 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({ dashboardUrl, title
             containerRef.current.innerHTML = '';
 
             // Make sure tableau API is available
-            if (!window.tableau || !window.tableau.Viz) {
-                throw new Error('Tableau API not properly loaded');
+            if (!window.tableau) {
+                throw new Error('Tableau Embedding API not properly loaded');
             }
 
-            // Create the visualization
-            const viz = new window.tableau.Viz(
-                containerRef.current,
-                dashboardUrl,
-                {
-                    width: '100%',
-                    height: '600px',
-                    hideTabs: false,
-                    hideToolbar: false,
-                    onFirstInteractive: () => {
-                        console.log('Tableau visualization is interactive');
-                        setLoading(false);
-                    },
-                    onError: (error: any) => {
-                        console.error('Tableau visualization error:', error);
-                        setError(`Error loading visualization: ${error.message || 'Unknown error'}`);
-                        setLoading(false);
-                    }
+            // Create the visualization using the new Embedding API v3
+            const viz = await window.tableau.VizManager.createViz({
+                ref: containerRef.current,
+                src: dashboardUrl,
+                width: '100%',
+                height: '600px',
+                hideTabs: false,
+                hideToolbar: false,
+                onFirstInteractive: () => {
+                    console.log('Tableau visualization is interactive');
+                    setLoading(false);
+                },
+                onError: (error: any) => {
+                    console.error('Tableau visualization error:', error);
+                    setError(`Error loading visualization: ${error.message || 'Unknown error'}`);
+                    setLoading(false);
                 }
-            );
+            });
 
             return () => {
                 if (viz) {
