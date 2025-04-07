@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Box, Tab, Tabs, Paper, Grid as MuiGrid } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Tab, Tabs, Paper } from '@mui/material';
+import { GridData } from '../types/grid';
 import DataGrid from './DataGrid';
 import DataForm from './DataForm';
-import { GridData } from '../types';
 import { ColDef } from 'ag-grid-community';
 
 interface TabPanelProps {
@@ -11,104 +11,130 @@ interface TabPanelProps {
     value: number;
 }
 
-const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
     return (
         <div
             role="tabpanel"
             hidden={value !== index}
             id={`simple-tabpanel-${index}`}
             aria-labelledby={`simple-tab-${index}`}
-            style={{ height: '100%' }}
+            {...other}
         >
             {value === index && (
-                <Box sx={{ height: '100%' }}>
+                <Box sx={{ p: 3 }}>
                     {children}
                 </Box>
             )}
         </div>
     );
-};
+}
 
 const DataTabs: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<number>(0);
+    const [activeTab, setActiveTab] = useState(0);
+    const [masterData, setMasterData] = useState<GridData[]>([]);
+    const [childData, setChildData] = useState<GridData[]>([]);
     const [selectedMasterRow, setSelectedMasterRow] = useState<GridData | null>(null);
     const [selectedChildRow, setSelectedChildRow] = useState<GridData | null>(null);
-
-    // Define column definitions for each tab
-    const getColumnDefs = (tabIndex: number): ColDef[] => {
-        switch (tabIndex) {
-            case 0: // Type 1 Data
-                return [
-                    { field: 'id', headerName: 'ID', checkboxSelection: true },
-                    { field: 'name', headerName: 'Name' },
-                    { field: 'email', headerName: 'Email' },
-                    { field: 'phone', headerName: 'Phone' },
-                    { field: 'address', headerName: 'Address' },
-                ];
-            case 1: // Type 2 Data
-                return [
-                    { field: 'id', headerName: 'ID', checkboxSelection: true },
-                    { field: 'productName', headerName: 'Product' },
-                    { field: 'category', headerName: 'Category' },
-                    { field: 'price', headerName: 'Price' },
-                    { field: 'inStock', headerName: 'In Stock' },
-                ];
-            case 2: // Type 3 Data
-                return [
-                    { field: 'id', headerName: 'ID', checkboxSelection: true },
-                    { field: 'orderNumber', headerName: 'Order #' },
-                    { field: 'customerName', headerName: 'Customer' },
-                    { field: 'orderDate', headerName: 'Date' },
-                    { field: 'status', headerName: 'Status' },
-                    { field: 'total', headerName: 'Total' },
-                ];
-            default:
-                return [
-                    { field: 'id', headerName: 'ID', checkboxSelection: true },
-                    { field: 'name', headerName: 'Name' },
-                    { field: 'email', headerName: 'Email' },
-                    { field: 'phone', headerName: 'Phone' },
-                ];
-        }
-    };
-
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number): void => {
-        setActiveTab(newValue);
-        // Clear selection when changing tabs
-        setSelectedMasterRow(null);
-        setSelectedChildRow(null);
-    };
-
-    const handleMasterRowSelect = (row: GridData | null): void => {
-        console.log('Master row selected:', row);
-        setSelectedMasterRow(row);
-    };
-
-    const handleChildRowSelect = (row: GridData | null): void => {
-        console.log('Child row selected:', row);
-        setSelectedChildRow(row);
-    };
-
-    const handleDataUpdate = (updatedData: GridData): void => {
-        console.log('Data updated:', updatedData);
-        setSelectedMasterRow(updatedData);
-    };
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const getMasterGridEndpoint = (tabIndex: number): string => {
         switch (tabIndex) {
             case 0:
-                return 'https://api.example.com/data/type1';
+                return 'http://localhost:5000/api/data/type1';
             case 1:
-                return 'https://api.example.com/data/type2';
+                return 'http://localhost:5000/api/data/type2';
             case 2:
-                return 'https://api.example.com/data/type3';
+                return 'http://localhost:5000/api/data/type3';
             default:
-                return 'https://api.example.com/data';
+                return 'http://localhost:5000/api/data/type1';
         }
     };
 
+    const getColumnDefs = (tabIndex: number): ColDef[] => {
+        switch (tabIndex) {
+            case 0:
+                return [
+                    { field: 'id', headerName: 'ID' },
+                    { field: 'name', headerName: 'Name' },
+                    { field: 'email', headerName: 'Email' },
+                    { field: 'phone', headerName: 'Phone' },
+                    { field: 'address', headerName: 'Address' }
+                ];
+            case 1:
+                return [
+                    { field: 'id', headerName: 'ID' },
+                    { field: 'productName', headerName: 'Product Name' },
+                    { field: 'category', headerName: 'Category' },
+                    { field: 'price', headerName: 'Price' },
+                    { field: 'inStock', headerName: 'In Stock' }
+                ];
+            case 2:
+                return [
+                    { field: 'id', headerName: 'ID' },
+                    { field: 'orderNumber', headerName: 'Order Number' },
+                    { field: 'customerName', headerName: 'Customer Name' },
+                    { field: 'orderDate', headerName: 'Order Date' },
+                    { field: 'status', headerName: 'Status' },
+                    { field: 'total', headerName: 'Total' }
+                ];
+            default:
+                return [
+                    { field: 'id', headerName: 'ID' },
+                    { field: 'name', headerName: 'Name' }
+                ];
+        }
+    };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(getMasterGridEndpoint(activeTab));
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                setMasterData(data);
+                setSelectedMasterRow(null);
+                setSelectedChildRow(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [activeTab]);
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setActiveTab(newValue);
+        setSelectedMasterRow(null);
+        setSelectedChildRow(null);
+    };
+
+    const handleMasterRowSelect = (row: GridData) => {
+        console.log('Selected master row:', row);
+        setSelectedMasterRow(row);
+        setSelectedChildRow(null);
+    };
+
+    const handleChildRowSelect = (row: GridData) => {
+        console.log('Selected child row:', row);
+        setSelectedChildRow(row);
+    };
+
+    const handleDataUpdate = (updatedData: GridData) => {
+        console.log('Updated data:', updatedData);
+        setSelectedMasterRow(updatedData);
+    };
+
     return (
-        <Box sx={{ width: '100%', height: '100%' }}>
+        <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={activeTab} onChange={handleTabChange} aria-label="data tabs">
                     <Tab label="Type 1 Data" />
@@ -116,98 +142,107 @@ const DataTabs: React.FC = () => {
                     <Tab label="Type 3 Data" />
                 </Tabs>
             </Box>
+
             <TabPanel value={activeTab} index={0}>
-                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
-                    <MuiGrid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ flex: 2 }}>
                         <DataGrid
-                            apiEndpoint={getMasterGridEndpoint(0)}
+                            data={masterData}
                             onRowSelect={handleMasterRowSelect}
-                            title="Type 1 Data"
                             columnDefs={getColumnDefs(0)}
+                            loading={loading}
+                            error={error}
                         />
-                    </MuiGrid>
-                    {selectedMasterRow && (
-                        <>
-                            <MuiGrid item xs={12} md={6}>
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
                                 <DataForm
                                     data={selectedMasterRow}
-                                    onSubmit={handleDataUpdate}
-                                    onCancel={() => setSelectedMasterRow(null)}
+                                    onUpdate={handleDataUpdate}
                                 />
-                            </MuiGrid>
-                            <MuiGrid item xs={12}>
-                                <DataGrid
-                                    parentId={selectedMasterRow.id}
-                                    onRowSelect={handleChildRowSelect}
-                                    isChildGrid={true}
-                                    title="Child Data"
-                                />
-                            </MuiGrid>
-                        </>
-                    )}
-                </MuiGrid>
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        data={childData}
+                                        onRowSelect={handleChildRowSelect}
+                                        columnDefs={[
+                                            { field: 'id', headerName: 'ID' },
+                                            { field: 'name', headerName: 'Name' }
+                                        ]}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
             </TabPanel>
+
             <TabPanel value={activeTab} index={1}>
-                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
-                    <MuiGrid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ flex: 2 }}>
                         <DataGrid
-                            apiEndpoint={getMasterGridEndpoint(1)}
+                            data={masterData}
                             onRowSelect={handleMasterRowSelect}
-                            title="Type 2 Data"
                             columnDefs={getColumnDefs(1)}
+                            loading={loading}
+                            error={error}
                         />
-                    </MuiGrid>
-                    {selectedMasterRow && (
-                        <>
-                            <MuiGrid item xs={12} md={6}>
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
                                 <DataForm
                                     data={selectedMasterRow}
-                                    onSubmit={handleDataUpdate}
-                                    onCancel={() => setSelectedMasterRow(null)}
+                                    onUpdate={handleDataUpdate}
                                 />
-                            </MuiGrid>
-                            <MuiGrid item xs={12}>
-                                <DataGrid
-                                    parentId={selectedMasterRow.id}
-                                    onRowSelect={handleChildRowSelect}
-                                    isChildGrid={true}
-                                    title="Child Data"
-                                />
-                            </MuiGrid>
-                        </>
-                    )}
-                </MuiGrid>
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        data={childData}
+                                        onRowSelect={handleChildRowSelect}
+                                        columnDefs={[
+                                            { field: 'id', headerName: 'ID' },
+                                            { field: 'name', headerName: 'Name' }
+                                        ]}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
             </TabPanel>
+
             <TabPanel value={activeTab} index={2}>
-                <MuiGrid container spacing={2} sx={{ height: '100%' }}>
-                    <MuiGrid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ flex: 2 }}>
                         <DataGrid
-                            apiEndpoint={getMasterGridEndpoint(2)}
+                            data={masterData}
                             onRowSelect={handleMasterRowSelect}
-                            title="Type 3 Data"
                             columnDefs={getColumnDefs(2)}
+                            loading={loading}
+                            error={error}
                         />
-                    </MuiGrid>
-                    {selectedMasterRow && (
-                        <>
-                            <MuiGrid item xs={12} md={6}>
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        {selectedMasterRow && (
+                            <>
                                 <DataForm
                                     data={selectedMasterRow}
-                                    onSubmit={handleDataUpdate}
-                                    onCancel={() => setSelectedMasterRow(null)}
+                                    onUpdate={handleDataUpdate}
                                 />
-                            </MuiGrid>
-                            <MuiGrid item xs={12}>
-                                <DataGrid
-                                    parentId={selectedMasterRow.id}
-                                    onRowSelect={handleChildRowSelect}
-                                    isChildGrid={true}
-                                    title="Child Data"
-                                />
-                            </MuiGrid>
-                        </>
-                    )}
-                </MuiGrid>
+                                <Box sx={{ mt: 2 }}>
+                                    <DataGrid
+                                        data={childData}
+                                        onRowSelect={handleChildRowSelect}
+                                        columnDefs={[
+                                            { field: 'id', headerName: 'ID' },
+                                            { field: 'name', headerName: 'Name' }
+                                        ]}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                </Box>
             </TabPanel>
         </Box>
     );

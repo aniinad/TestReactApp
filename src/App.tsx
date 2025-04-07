@@ -1,27 +1,33 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Box, CssBaseline, Container } from '@mui/material';
+import Navbar from './components/Navbar';
 import DataTabs from './components/DataTabs';
-
-const theme = createTheme({
-    palette: {
-        mode: 'light',
-        primary: {
-            main: '#1976d2',
-        },
-    },
-});
+import TableauDashboard from './components/TableauDashboard';
 
 const App: React.FC = () => {
     return (
-        <ThemeProvider theme={theme}>
+        <Router>
             <CssBaseline />
-            <Router>
-                <Routes>
-                    <Route path="/" element={<DataTabs />} />
-                </Routes>
-            </Router>
-        </ThemeProvider>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                <Navbar />
+                <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/data" replace />} />
+                        <Route path="/data" element={<DataTabs />} />
+                        <Route
+                            path="/tableau"
+                            element={
+                                <TableauDashboard
+                                    dashboardUrl="https://public.tableau.com/views/Superstore/Overview"
+                                    title="Sales Dashboard"
+                                />
+                            }
+                        />
+                    </Routes>
+                </Container>
+            </Box>
+        </Router>
     );
 };
 
