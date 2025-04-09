@@ -9,12 +9,18 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions
+    DialogActions,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataFormProps, GridData, ChildData } from '../types';
 
 const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
@@ -27,6 +33,37 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
         name: '',
         description: ''
     });
+    const [error, setError] = useState<string | null>(null);
+
+    // Form field groups for accordion
+    const formGroups = [
+        {
+            title: 'Basic Information',
+            fields: [
+                { name: 'name', label: 'Name', type: 'text' },
+                { name: 'email', label: 'Email', type: 'email' },
+                { name: 'phone', label: 'Phone', type: 'tel' }
+            ]
+        },
+        {
+            title: 'Contact Details',
+            fields: [
+                { name: 'address', label: 'Address', type: 'text' },
+                { name: 'city', label: 'City', type: 'text' },
+                { name: 'state', label: 'State', type: 'text' },
+                { name: 'zipCode', label: 'ZIP Code', type: 'text' }
+            ]
+        },
+        {
+            title: 'Additional Information',
+            fields: [
+                { name: 'department', label: 'Department', type: 'text' },
+                { name: 'position', label: 'Position', type: 'text' },
+                { name: 'hireDate', label: 'Hire Date', type: 'date' },
+                { name: 'employeeId', label: 'Employee ID', type: 'text' }
+            ]
+        }
+    ];
 
     useEffect(() => {
         setFormData(data);
@@ -132,76 +169,64 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
     ];
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                    Edit Record
-                </Typography>
-                <Stack spacing={2}>
-                    <input
-                        type="hidden"
-                        name="id"
-                        value={formData.id || ''}
-                    />
-                    <TextField
-                        name="name"
-                        label="Name"
-                        value={formData.name || ''}
-                        onChange={handleChange}
-                        fullWidth
-                    />
-                    <TextField
-                        name="email"
-                        label="Email"
-                        value={formData.email || ''}
-                        onChange={handleChange}
-                        fullWidth
-                    />
-                    <TextField
-                        name="phone"
-                        label="Phone"
-                        value={formData.phone || ''}
-                        onChange={handleChange}
-                        fullWidth
-                    />
+        <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                    {error}
+                </Alert>
+            )}
 
-                    <Stack direction="row" spacing={2} justifyContent="flex-end">
-                        <Button
-                            type="button"
-                            onClick={onCancel}
-                            variant="outlined"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={isSubmitting}
-                        >
-                            Save Changes
-                        </Button>
-                    </Stack>
-                </Stack>
-            </Paper>
+            {formGroups.map((group, index) => (
+                <Accordion key={index} defaultExpanded={index === 0}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">{group.title}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Stack spacing={2}>
+                            {group.fields.map((field) => (
+                                <TextField
+                                    key={field.name}
+                                    name={field.name}
+                                    label={field.label}
+                                    type={field.type}
+                                    value={formData[field.name] || ''}
+                                    onChange={handleChange}
+                                    fullWidth
+                                    required
+                                />
+                            ))}
+                        </Stack>
+                    </AccordionDetails>
+                </Accordion>
+            ))}
 
-            <Paper sx={{ p: 2, height: '400px' }}>
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <Button onClick={onCancel} disabled={isSubmitting}>
+                    Cancel
+                </Button>
+                <Button type="submit" variant="contained" disabled={isSubmitting}>
+                    {isSubmitting ? <CircularProgress size={24} /> : 'Save Changes'}
+                </Button>
+            </Box>
+
+            <Paper sx={{ mt: 4, p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6">
-                        Child Records
-                    </Typography>
+                    <Typography variant="h6">Child Records</Typography>
                     <Button
                         variant="contained"
                         onClick={() => setIsNewChildDialogOpen(true)}
+                        disabled={isSubmitting}
                     >
                         Add New Child
                     </Button>
                 </Box>
+
                 {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                        <Typography>Loading child data...</Typography>
+                        <CircularProgress />
                     </Box>
                 ) : (
-                    <div className="ag-theme-material" style={{ height: '100%', width: '100%' }}>
+                    <div className="ag-theme-material" style={{ height: '400px', width: '100%' }}>
                         <AgGridReact
                             rowData={childData}
                             columnDefs={childColumnDefs}
@@ -242,7 +267,7 @@ const DataForm: React.FC<DataFormProps> = ({ data, onSubmit, onCancel }) => {
                     <DialogActions>
                         <Button onClick={() => setIsNewChildDialogOpen(false)}>Cancel</Button>
                         <Button type="submit" variant="contained" disabled={isSubmitting}>
-                            Create
+                            {isSubmitting ? <CircularProgress size={24} /> : 'Create'}
                         </Button>
                     </DialogActions>
                 </form>
