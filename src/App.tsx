@@ -8,6 +8,21 @@ import TableauDashboard from './components/TableauDashboard';
 // Replace this URL with your own Tableau dashboard URL
 const TABLEAU_DASHBOARD_URL = 'https://your-tableau-server.com/views/YourDashboard/YourView';
 
+const tableauTabs = [
+    {
+        url: "https://your-tableau-server/views/dashboard1",
+        title: "Sales Dashboard"
+    },
+    {
+        url: "https://your-tableau-server/views/dashboard2",
+        title: "Marketing Analytics"
+    },
+    {
+        url: "https://your-tableau-server/views/dashboard3",
+        title: "Customer Insights"
+    }
+];
+
 const App: React.FC = () => {
     return (
         <Router>
@@ -22,8 +37,10 @@ const App: React.FC = () => {
                             path="/tableau"
                             element={
                                 <TableauDashboard
-                                    dashboardUrl={TABLEAU_DASHBOARD_URL}
-                                    title="Your Custom Dashboard"
+                                    tabs={tableauTabs}
+                                    defaultTabIndex={0}
+                                    width="100%"
+                                    height="600px"
                                 />
                             }
                         />
