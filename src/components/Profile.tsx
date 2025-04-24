@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, Avatar, Divider, Grid, Card, CardContent } from '@mui/material';
+import { Box, Typography, Paper, Avatar, Divider, Card, CardContent } from '@mui/material';
 import { useAuth } from '../auth/AuthProvider';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import EmailIcon from '@mui/icons-material/Email';
@@ -44,8 +44,8 @@ const Profile: React.FC = () => {
                     Account Information
                 </Typography>
 
-                <Grid container spacing={3} sx={{ mt: 1 }}>
-                    <Grid item xs={12} md={6}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 1 }}>
+                    <Box sx={{ flex: '1 1 45%', minWidth: '250px' }}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -57,9 +57,9 @@ const Profile: React.FC = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Box>
 
-                    <Grid item xs={12} md={6}>
+                    <Box sx={{ flex: '1 1 45%', minWidth: '250px' }}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -71,9 +71,9 @@ const Profile: React.FC = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Box>
 
-                    <Grid item xs={12} md={6}>
+                    <Box sx={{ flex: '1 1 45%', minWidth: '250px' }}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -85,9 +85,9 @@ const Profile: React.FC = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Box>
 
-                    <Grid item xs={12} md={6}>
+                    <Box sx={{ flex: '1 1 45%', minWidth: '250px' }}>
                         <Card variant="outlined">
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -99,8 +99,8 @@ const Profile: React.FC = () => {
                                 </Typography>
                             </CardContent>
                         </Card>
-                    </Grid>
-                </Grid>
+                    </Box>
+                </Box>
 
                 <Box sx={{ mt: 3 }}>
                     <Typography variant="body2" color="text.secondary">
