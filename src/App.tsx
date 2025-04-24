@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ApiExample from './components/ApiExample';
 import DataLoader from './components/DataLoader';
 import UserList from './components/UserList';
+import Profile from './components/Profile';
 import { AuthProvider } from './auth/AuthProvider';
 
 // Create a theme instance
@@ -41,6 +42,7 @@ function App() {
                                 <Route path="/api-example" element={<ProtectedRoute><ApiExample /></ProtectedRoute>} />
                                 <Route path="/data-loader" element={<ProtectedRoute><DataLoader /></ProtectedRoute>} />
                                 <Route path="/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
+                                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                             </Routes>
                         </Box>
                     </Box>

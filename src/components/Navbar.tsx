@@ -21,6 +21,11 @@ const Navbar: React.FC = () => {
         setAnchorEl(null);
     };
 
+    const handleProfile = () => {
+        handleClose();
+        navigate('/profile');
+    };
+
     const handleLogout = () => {
         logout();
         handleClose();
@@ -118,14 +123,16 @@ const Navbar: React.FC = () => {
                             open={Boolean(anchorEl)}
                             onClose={handleClose}
                         >
-                            <MenuItem onClick={handleClose}>Profile</MenuItem>
+                            <MenuItem onClick={handleProfile}>Profile</MenuItem>
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </Menu>
                     </>
                 ) : (
-                    <Button color="inherit" onClick={login}>
-                        Login
-                    </Button>
+                    <Box sx={{ marginLeft: 'auto' }}>
+                        <Button color="inherit" onClick={login}>
+                            Login
+                        </Button>
+                    </Box>
                 )}
             </Toolbar>
         </AppBar>
