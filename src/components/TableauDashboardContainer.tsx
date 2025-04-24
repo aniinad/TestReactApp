@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import TableauDashboard from './TableauDashboard';
-import { useApiService } from '../services/apiService';
+import { useAuth } from '../auth/AuthProvider';
 
 interface TableauTab {
     url: string;
@@ -22,13 +22,42 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     const [tabs, setTabs] = useState<TableauTab[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const apiService = useApiService();
+    const { getAccessToken } = useAuth();
 
     useEffect(() => {
         const fetchTabs = async () => {
             try {
                 setLoading(true);
-                const data = await apiService.get<TableauTab[]>(apiEndpoint);
+
+                // Get the access token
+                const token = await getAccessToken();
+
+                if (!token) {
+                    throw new Error('Failed to get access token. Please try logging in again.');
+                }
+
+                // Make the API call with the token
+                const response = await fetch(apiEndpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Check if response is OK
+                if (!response.ok) {
+                    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+                }
+
+                // Check content type to ensure we're getting JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Expected JSON response but got ${contentType || 'unknown content type'}`);
+                }
+
+                // Parse the JSON response
+                const data = await response.json();
 
                 // Validate the data structure
                 if (!Array.isArray(data)) {
@@ -52,13 +81,17 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
                 const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
                 setError(errorMessage);
                 console.error('Error fetching tableau tabs:', err);
+
+                // Log additional details for debugging
+                console.log('API Endpoint:', apiEndpoint);
+                console.log('Error details:', err);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchTabs();
-    }, [apiEndpoint, apiService]);
+    }, [apiEndpoint, getAccessToken]);
 
     if (loading) {
         return (
