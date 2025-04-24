@@ -41,6 +41,10 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { instance, accounts } = useMsal();
     const account = useAccount(accounts[0] || {});
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isAutoLoginAttempted, setIsAutoLoginAttempted] = useState(false);
+
+    // Define isAuthenticated before it's used in the useEffect
+    const isAuthenticated = !!account;
 
     // Initialize MSAL
     useEffect(() => {
@@ -72,7 +76,23 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         initializeMsal();
     }, [instance]);
 
-    const isAuthenticated = !!account;
+    // Auto-login effect
+    useEffect(() => {
+        const autoLogin = async () => {
+            // Only attempt auto-login once and when MSAL is initialized
+            if (isInitialized && !isAuthenticated && !isAutoLoginAttempted) {
+                try {
+                    setIsAutoLoginAttempted(true);
+                    console.log('Attempting automatic login...');
+                    await login();
+                } catch (error) {
+                    console.error('Automatic login failed:', error);
+                }
+            }
+        };
+
+        autoLogin();
+    }, [isInitialized, isAuthenticated, isAutoLoginAttempted]);
 
     const login = async () => {
         try {
