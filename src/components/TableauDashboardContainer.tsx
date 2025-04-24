@@ -24,13 +24,18 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     const [error, setError] = useState<string | null>(null);
     const { getAccessToken } = useAuth();
 
+    // Get the API scope from environment variables
+    const apiScope = process.env.REACT_APP_API_SCOPE || 'api://YOUR_API_ID/access_as_user';
+
     useEffect(() => {
         const fetchTabs = async () => {
             try {
                 setLoading(true);
 
-                // Get the access token
-                const token = await getAccessToken();
+                // Get the access token with the specific API scope
+                const token = await getAccessToken({
+                    scopes: [apiScope]
+                });
 
                 if (!token) {
                     throw new Error('Failed to get access token. Please try logging in again.');
@@ -84,6 +89,7 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
 
                 // Log additional details for debugging
                 console.log('API Endpoint:', apiEndpoint);
+                console.log('API Scope:', apiScope);
                 console.log('Error details:', err);
             } finally {
                 setLoading(false);
@@ -91,7 +97,7 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
         };
 
         fetchTabs();
-    }, [apiEndpoint, getAccessToken]);
+    }, [apiEndpoint, getAccessToken, apiScope]);
 
     if (loading) {
         return (
