@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import TableauDashboard from './TableauDashboard';
+import { useApiService } from '../services/apiService';
 
 interface TableauTab {
     url: string;
@@ -21,18 +22,13 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     const [tabs, setTabs] = useState<TableauTab[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const apiService = useApiService();
 
     useEffect(() => {
         const fetchTabs = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(apiEndpoint);
-
-                if (!response.ok) {
-                    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
+                const data = await apiService.get<TableauTab[]>(apiEndpoint);
 
                 // Validate the data structure
                 if (!Array.isArray(data)) {
@@ -62,7 +58,7 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
         };
 
         fetchTabs();
-    }, [apiEndpoint]);
+    }, [apiEndpoint, apiService]);
 
     if (loading) {
         return (
