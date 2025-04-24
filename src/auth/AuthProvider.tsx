@@ -1,24 +1,10 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { PublicClientApplication, EventType, EventMessage, AuthenticationResult } from '@azure/msal-browser';
 import { MsalProvider, useMsal, useAccount } from '@azure/msal-react';
 import { msalConfig, loginRequest } from '../authConfig';
 
 // Initialize MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
-
-// Default to using the first account if no active account is set on the MSAL instance
-if (!msalInstance.getActiveAccount() && msalInstance.getAllAccounts().length > 0) {
-    // Account selection logic is app dependent. Adjust as needed for your use case.
-    msalInstance.setActiveAccount(msalInstance.getAllAccounts()[0]);
-}
-
-// Optional - This will update account state if a user signs in from another tab or window
-msalInstance.addEventCallback((event: EventMessage) => {
-    if (event.eventType === EventType.LOGIN_SUCCESS) {
-        const result = event.payload as AuthenticationResult;
-        msalInstance.setActiveAccount(result.account);
-    }
-});
 
 // Create a context for authentication
 interface AuthContextType {
@@ -27,6 +13,7 @@ interface AuthContextType {
     login: () => Promise<void>;
     logout: () => Promise<void>;
     getAccessToken: () => Promise<string>;
+    isInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -53,6 +40,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { instance, accounts } = useMsal();
     const account = useAccount(accounts[0] || {});
+    const [isInitialized, setIsInitialized] = useState(false);
+
+    // Initialize MSAL
+    useEffect(() => {
+        const initializeMsal = async () => {
+            try {
+                // Initialize MSAL
+                await instance.initialize();
+
+                // Default to using the first account if no active account is set on the MSAL instance
+                if (!instance.getActiveAccount() && instance.getAllAccounts().length > 0) {
+                    // Account selection logic is app dependent. Adjust as needed for your use case.
+                    instance.setActiveAccount(instance.getAllAccounts()[0]);
+                }
+
+                // Optional - This will update account state if a user signs in from another tab or window
+                instance.addEventCallback((event: EventMessage) => {
+                    if (event.eventType === EventType.LOGIN_SUCCESS) {
+                        const result = event.payload as AuthenticationResult;
+                        instance.setActiveAccount(result.account);
+                    }
+                });
+
+                setIsInitialized(true);
+            } catch (error) {
+                console.error('MSAL initialization failed:', error);
+            }
+        };
+
+        initializeMsal();
+    }, [instance]);
 
     const isAuthenticated = !!account;
 
@@ -99,7 +117,8 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user: account,
         login,
         logout,
-        getAccessToken
+        getAccessToken,
+        isInitialized
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

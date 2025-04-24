@@ -7,10 +7,14 @@ interface ApiResponse<T> {
 }
 
 export const useApiService = () => {
-    const { getAccessToken } = useAuth();
+    const { getAccessToken, isInitialized } = useAuth();
     const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
 
     const getHeaders = async () => {
+        if (!isInitialized) {
+            throw new Error('MSAL is not initialized yet. Please wait a moment and try again.');
+        }
+
         const token = await getAccessToken();
         return {
             'Authorization': `Bearer ${token}`,
@@ -33,6 +37,10 @@ export const useApiService = () => {
     };
 
     const get = async <T>(url: string): Promise<T> => {
+        if (!isInitialized) {
+            throw new Error('MSAL is not initialized yet. Please wait a moment and try again.');
+        }
+
         const headers = await getHeaders();
         const response = await fetch(`${baseUrl}${url}`, {
             method: 'GET',
@@ -44,6 +52,10 @@ export const useApiService = () => {
     };
 
     const post = async <T>(url: string, data: any): Promise<T> => {
+        if (!isInitialized) {
+            throw new Error('MSAL is not initialized yet. Please wait a moment and try again.');
+        }
+
         const headers = await getHeaders();
         const response = await fetch(`${baseUrl}${url}`, {
             method: 'POST',
@@ -56,6 +68,10 @@ export const useApiService = () => {
     };
 
     const put = async <T>(url: string, data: any): Promise<T> => {
+        if (!isInitialized) {
+            throw new Error('MSAL is not initialized yet. Please wait a moment and try again.');
+        }
+
         const headers = await getHeaders();
         const response = await fetch(`${baseUrl}${url}`, {
             method: 'PUT',
@@ -68,6 +84,10 @@ export const useApiService = () => {
     };
 
     const del = async <T>(url: string): Promise<T> => {
+        if (!isInitialized) {
+            throw new Error('MSAL is not initialized yet. Please wait a moment and try again.');
+        }
+
         const headers = await getHeaders();
         const response = await fetch(`${baseUrl}${url}`, {
             method: 'DELETE',
