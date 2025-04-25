@@ -83,7 +83,7 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (isInitialized && !isAuthenticated && !isAutoLoginAttempted) {
                 try {
                     setIsAutoLoginAttempted(true);
-                    console.log('Attempting automatic login...');
+                    console.log('Attempting automatic login with redirect...');
                     await login();
                 } catch (error) {
                     console.error('Automatic login failed:', error);
@@ -105,7 +105,8 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             }
 
-            await instance.loginPopup(loginRequest);
+            // Use redirect login instead of popup
+            await instance.loginRedirect(loginRequest);
         } catch (error) {
             console.error('Login failed:', error);
             throw error;
@@ -123,7 +124,8 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
             }
 
-            await instance.logoutPopup();
+            // Use redirect logout instead of popup
+            await instance.logoutRedirect();
         } catch (error) {
             console.error('Logout failed:', error);
             throw error;
@@ -145,17 +147,24 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 throw new Error('No active account! Verify a user has been signed in and setActiveAccount has been called.');
             }
 
-            const response = await instance.acquireTokenSilent({
-                ...loginRequest,
-                account: account
-            });
+            try {
+                // Try silent token acquisition first
+                const response = await instance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
+                return response.accessToken;
+            } catch (silentError) {
+                console.error('Silent token acquisition failed:', silentError);
 
-            return response.accessToken;
+                // If silent token acquisition fails, use redirect
+                await instance.acquireTokenRedirect(loginRequest);
+                // Note: This will redirect the page, so the code below won't execute
+                return '';
+            }
         } catch (error) {
             console.error('Error acquiring token:', error);
-            // If silent token acquisition fails, try interactive method
-            const response = await instance.acquireTokenPopup(loginRequest);
-            return response.accessToken;
+            throw error;
         }
     };
 
