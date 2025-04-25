@@ -12,6 +12,7 @@ interface TableauDashboardProps {
     defaultTabIndex?: number;
     width?: string | number;
     height?: string | number;
+    accessToken?: string | null;
 }
 
 interface TabPanelProps {
@@ -44,7 +45,8 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({
     tabs,
     defaultTabIndex = 0,
     width = '100%',
-    height = '600px'
+    height = '600px',
+    accessToken = null
 }) => {
     const [activeTab, setActiveTab] = useState(defaultTabIndex);
     const [error, setError] = useState<string | null>(null);
@@ -56,6 +58,18 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({
     const handleError = (error: Error) => {
         setError(error.message);
         console.error('Tableau dashboard error:', error);
+    };
+
+    // Function to append the access token to the Tableau URL for SSO
+    const getTableauUrlWithToken = (url: string): string => {
+        if (!accessToken) return url;
+
+        // Check if the URL already has query parameters
+        const hasQueryParams = url.includes('?');
+        const separator = hasQueryParams ? '&' : '?';
+
+        // Append the token as a query parameter
+        return `${url}${separator}access_token=${accessToken}`;
     };
 
     if (!tabs || tabs.length === 0) {
@@ -96,7 +110,7 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({
             {tabs.map((tab, index) => (
                 <TabPanel key={index} value={activeTab} index={index}>
                     <TableauEmbed
-                        src={tab.url}
+                        src={getTableauUrlWithToken(tab.url)}
                         width={width}
                         height={height}
                         onError={handleError}

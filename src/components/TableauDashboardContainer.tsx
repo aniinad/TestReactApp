@@ -23,10 +23,25 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     const [tabs, setTabs] = useState<TableauTab[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [accessToken, setAccessToken] = useState<string | null>(null);
     const { getAccessToken } = useAuth();
 
     // Get the API scope from environment variables
     const apiScope = process.env.REACT_APP_API_SCOPE || 'api://YOUR_API_ID/access_as_user';
+
+    // Fetch access token for Tableau SSO
+    useEffect(() => {
+        const fetchAccessToken = async () => {
+            try {
+                const token = await getAccessToken();
+                setAccessToken(token);
+            } catch (err) {
+                console.error('Error fetching access token for Tableau SSO:', err);
+            }
+        };
+
+        fetchAccessToken();
+    }, [getAccessToken]);
 
     useEffect(() => {
         const fetchTabs = async () => {
@@ -121,6 +136,7 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
             tabs={tabs}
             width={width}
             height={height}
+            accessToken={accessToken}
         />
     );
 };
