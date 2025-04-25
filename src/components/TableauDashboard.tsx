@@ -110,7 +110,7 @@ const TableauDashboard: React.FC<TableauDashboardProps> = ({
             {tabs.map((tab, index) => (
                 <TabPanel key={index} value={activeTab} index={index}>
                     <TableauEmbed
-                        src={getTableauUrlWithToken(tab.url)}
+                        sourceUrl={getTableauUrlWithToken(tab.url)}
                         width={width}
                         height={height}
                         onError={handleError}

@@ -24,7 +24,7 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
-    const { getAccessToken } = useAuth();
+    const { getAccessToken, isInitialized } = useAuth();
 
     // Get the API scope from environment variables
     const apiScope = process.env.REACT_APP_API_SCOPE || 'api://YOUR_API_ID/access_as_user';
@@ -32,6 +32,12 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
     // Fetch access token for Tableau SSO
     useEffect(() => {
         const fetchAccessToken = async () => {
+            // Only attempt to get the token if MSAL is initialized
+            if (!isInitialized) {
+                console.log('MSAL not yet initialized, waiting...');
+                return;
+            }
+
             try {
                 const token = await getAccessToken();
                 setAccessToken(token);
@@ -41,10 +47,16 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
         };
 
         fetchAccessToken();
-    }, [getAccessToken]);
+    }, [getAccessToken, isInitialized]);
 
     useEffect(() => {
         const fetchTabs = async () => {
+            // Only attempt to fetch tabs if MSAL is initialized
+            if (!isInitialized) {
+                console.log('MSAL not yet initialized, waiting...');
+                return;
+            }
+
             try {
                 setLoading(true);
 
@@ -113,7 +125,18 @@ const TableauDashboardContainer: React.FC<TableauDashboardContainerProps> = ({
         };
 
         fetchTabs();
-    }, [apiEndpoint, getAccessToken, apiScope]);
+    }, [apiEndpoint, getAccessToken, apiScope, isInitialized]);
+
+    if (!isInitialized) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+                <CircularProgress />
+                <Box sx={{ ml: 2 }}>
+                    Initializing authentication...
+                </Box>
+            </Box>
+        );
+    }
 
     if (loading) {
         return (

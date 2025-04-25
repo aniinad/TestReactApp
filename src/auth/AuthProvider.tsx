@@ -96,6 +96,15 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async () => {
         try {
+            // Ensure MSAL is initialized before attempting login
+            if (!isInitialized) {
+                console.log('MSAL not yet initialized, waiting...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!isInitialized) {
+                    throw new Error('MSAL initialization timeout');
+                }
+            }
+
             await instance.loginPopup(loginRequest);
         } catch (error) {
             console.error('Login failed:', error);
@@ -105,6 +114,15 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const logout = async () => {
         try {
+            // Ensure MSAL is initialized before attempting logout
+            if (!isInitialized) {
+                console.log('MSAL not yet initialized, waiting...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!isInitialized) {
+                    throw new Error('MSAL initialization timeout');
+                }
+            }
+
             await instance.logoutPopup();
         } catch (error) {
             console.error('Logout failed:', error);
@@ -114,6 +132,15 @@ const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const getAccessToken = async (): Promise<string> => {
         try {
+            // Ensure MSAL is initialized before attempting to get token
+            if (!isInitialized) {
+                console.log('MSAL not yet initialized, waiting...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!isInitialized) {
+                    throw new Error('MSAL initialization timeout');
+                }
+            }
+
             if (!account) {
                 throw new Error('No active account! Verify a user has been signed in and setActiveAccount has been called.');
             }
