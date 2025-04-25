@@ -6,6 +6,8 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ApiIcon from '@mui/icons-material/Api';
 import DataObjectIcon from '@mui/icons-material/DataObject';
 import PeopleIcon from '@mui/icons-material/People';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '../auth/AuthProvider';
 
 const Navbar: React.FC = () => {
@@ -69,6 +71,22 @@ const Navbar: React.FC = () => {
                             <Button
                                 color="inherit"
                                 component={RouterLink}
+                                to="/tableau"
+                                startIcon={<DashboardIcon />}
+                            >
+                                Tableau
+                            </Button>
+                            <Button
+                                color="inherit"
+                                component={RouterLink}
+                                to="/admin"
+                                startIcon={<AdminPanelSettingsIcon />}
+                            >
+                                Admin
+                            </Button>
+                            <Button
+                                color="inherit"
+                                component={RouterLink}
                                 to="/api-example"
                                 startIcon={<ApiIcon />}
                             >
@@ -101,7 +119,7 @@ const Navbar: React.FC = () => {
                             color="inherit"
                         >
                             {user?.username ? (
-                                <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
                                     {user.username.charAt(0).toUpperCase()}
                                 </Avatar>
                             ) : (

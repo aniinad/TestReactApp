@@ -11,6 +11,8 @@ import ApiExample from './components/ApiExample';
 import DataLoader from './components/DataLoader';
 import UserList from './components/UserList';
 import Profile from './components/Profile';
+import TableauDashboardContainer from './components/TableauDashboardContainer';
+import Admin from './components/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create a theme instance
@@ -33,11 +35,13 @@ const AppContent: React.FC = () => {
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <CssBaseline />
             <Navbar />
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+            <Box component="main" sx={{ flexGrow: 1, p: 3, height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
                 <Routes>
                     <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/data-grid" element={<ProtectedRoute><DataGrid /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/tableau" element={<ProtectedRoute><TableauDashboardContainer /></ProtectedRoute>} />
+                    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/api-example" element={<ProtectedRoute><ApiExample /></ProtectedRoute>} />
                     <Route path="/data-loader" element={<ProtectedRoute><DataLoader /></ProtectedRoute>} />
