@@ -1,7 +1,8 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { PublicClientApplication, EventType, EventMessage, AuthenticationResult } from '@azure/msal-browser';
+import { PublicClientApplication, EventType, EventMessage, AuthenticationResult, AccountInfo } from '@azure/msal-browser';
 import { MsalProvider, useMsal, useAccount } from '@azure/msal-react';
 import { msalConfig, loginRequest } from '../authConfig';
+import { useNavigate } from 'react-router-dom';
 
 // Initialize MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -9,11 +10,11 @@ const msalInstance = new PublicClientApplication(msalConfig);
 // Create a context for authentication
 interface AuthContextType {
     isAuthenticated: boolean;
-    user: any;
+    user: AccountInfo | null;
     login: () => Promise<void>;
-    logout: () => Promise<void>;
+    logout: () => void;
     getAccessToken: () => Promise<string>;
-    isInitialized: boolean;
+    redirectTo: (path: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,152 +30,85 @@ export const useAuth = () => {
 
 // Auth provider component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    return (
-        <MsalProvider instance={msalInstance}>
-            <AuthContextProvider>{children}</AuthContextProvider>
-        </MsalProvider>
-    );
-};
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [user, setUser] = useState<AccountInfo | null>(null);
+    const navigate = useNavigate();
 
-// Inner component that provides the auth context
-const AuthContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { instance, accounts } = useMsal();
-    const account = useAccount(accounts[0] || {});
-    const [isInitialized, setIsInitialized] = useState(false);
-    const [isAutoLoginAttempted, setIsAutoLoginAttempted] = useState(false);
-
-    // Define isAuthenticated before it's used in the useEffect
-    const isAuthenticated = !!account;
-
-    // Initialize MSAL
     useEffect(() => {
-        const initializeMsal = async () => {
-            try {
-                // Initialize MSAL
-                await instance.initialize();
+        // Check if user is already signed in
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+            setUser(accounts[0]);
+            setIsAuthenticated(true);
+        }
 
-                // Default to using the first account if no active account is set on the MSAL instance
-                if (!instance.getActiveAccount() && instance.getAllAccounts().length > 0) {
-                    // Account selection logic is app dependent. Adjust as needed for your use case.
-                    instance.setActiveAccount(instance.getAllAccounts()[0]);
-                }
-
-                // Optional - This will update account state if a user signs in from another tab or window
-                instance.addEventCallback((event: EventMessage) => {
-                    if (event.eventType === EventType.LOGIN_SUCCESS) {
-                        const result = event.payload as AuthenticationResult;
-                        instance.setActiveAccount(result.account);
-                    }
-                });
-
-                setIsInitialized(true);
-            } catch (error) {
-                console.error('MSAL initialization failed:', error);
-            }
-        };
-
-        initializeMsal();
-    }, [instance]);
-
-    // Auto-login effect
-    useEffect(() => {
-        const autoLogin = async () => {
-            // Only attempt auto-login once and when MSAL is initialized
-            if (isInitialized && !isAuthenticated && !isAutoLoginAttempted) {
-                try {
-                    setIsAutoLoginAttempted(true);
-                    console.log('Attempting automatic login with redirect...');
-                    await login();
-                } catch (error) {
-                    console.error('Automatic login failed:', error);
+        // Add event callback for handling redirects
+        const callbackId = msalInstance.addEventCallback((event: EventMessage) => {
+            if (event.eventType === EventType.LOGIN_SUCCESS) {
+                const account = event.payload?.account;
+                if (account) {
+                    setUser(account);
+                    setIsAuthenticated(true);
                 }
             }
-        };
+        });
 
-        autoLogin();
-    }, [isInitialized, isAuthenticated, isAutoLoginAttempted]);
+        return () => {
+            if (callbackId) {
+                msalInstance.removeEventCallback(callbackId);
+            }
+        };
+    }, []);
 
     const login = async () => {
         try {
-            // Ensure MSAL is initialized before attempting login
-            if (!isInitialized) {
-                console.log('MSAL not yet initialized, waiting...');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                if (!isInitialized) {
-                    throw new Error('MSAL initialization timeout');
-                }
+            const response = await msalInstance.loginRedirect(loginRequest);
+            if (response) {
+                setUser(response.account);
+                setIsAuthenticated(true);
             }
-
-            // Use redirect login instead of popup
-            await instance.loginRedirect(loginRequest);
         } catch (error) {
-            console.error('Login failed:', error);
+            console.error('Login error:', error);
             throw error;
         }
     };
 
-    const logout = async () => {
-        try {
-            // Ensure MSAL is initialized before attempting logout
-            if (!isInitialized) {
-                console.log('MSAL not yet initialized, waiting...');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                if (!isInitialized) {
-                    throw new Error('MSAL initialization timeout');
-                }
-            }
-
-            // Use redirect logout instead of popup
-            await instance.logoutRedirect();
-        } catch (error) {
-            console.error('Logout failed:', error);
-            throw error;
-        }
+    const logout = () => {
+        msalInstance.logoutRedirect();
+        setUser(null);
+        setIsAuthenticated(false);
     };
 
     const getAccessToken = async (): Promise<string> => {
         try {
-            // Ensure MSAL is initialized before attempting to get token
-            if (!isInitialized) {
-                console.log('MSAL not yet initialized, waiting...');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                if (!isInitialized) {
-                    throw new Error('MSAL initialization timeout');
-                }
-            }
-
+            const account = msalInstance.getAllAccounts()[0];
             if (!account) {
-                throw new Error('No active account! Verify a user has been signed in and setActiveAccount has been called.');
+                throw new Error('No active account');
             }
 
-            try {
-                // Try silent token acquisition first
-                const response = await instance.acquireTokenSilent({
-                    ...loginRequest,
-                    account: account
-                });
-                return response.accessToken;
-            } catch (silentError) {
-                console.error('Silent token acquisition failed:', silentError);
+            const response = await msalInstance.acquireTokenSilent({
+                ...loginRequest,
+                account: account
+            });
 
-                // If silent token acquisition fails, use redirect
-                await instance.acquireTokenRedirect(loginRequest);
-                // Note: This will redirect the page, so the code below won't execute
-                return '';
-            }
+            return response.accessToken;
         } catch (error) {
-            console.error('Error acquiring token:', error);
+            console.error('Error getting access token:', error);
             throw error;
         }
     };
 
+    const redirectTo = (path: string) => {
+        navigate(path);
+    };
+
     const value = {
         isAuthenticated,
-        user: account,
+        user,
         login,
         logout,
         getAccessToken,
-        isInitialized
+        redirectTo
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

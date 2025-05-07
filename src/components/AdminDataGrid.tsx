@@ -1,103 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Button, Typography, CircularProgress, Alert } from '@mui/material';
 import { AgGridReact } from 'ag-grid-react';
-import { ColDef, GridApi, GridReadyEvent, ICellEditorParams, ICellRendererParams } from 'ag-grid-community';
-import { useApiService } from '../services/apiService';
-
-// Import Ag-Grid styles
+import { ColDef, GridReadyEvent, ICellEditorParams } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { useApiService } from '../services/apiService';
 
+// Define the data interface
 interface AdminData {
     id: number;
     name: string;
     email: string;
     role: string;
     status: string;
+    lastLogin: string;
     createdAt: string;
 }
 
 const AdminDataGrid: React.FC = () => {
+    const apiService = useApiService();
     const [rowData, setRowData] = useState<AdminData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [gridApi, setGridApi] = useState<GridApi | null>(null);
-    const apiService = useApiService();
-
-    // Reference to track if component is mounted
-    const isMounted = useRef(true);
-
-    // Column definitions
-    const columnDefs: ColDef[] = [
-        {
-            field: 'id',
-            headerName: 'ID',
-            width: 80,
-            editable: false,
-            filter: 'agNumberColumnFilter'
-        },
-        {
-            field: 'name',
-            headerName: 'Name',
-            flex: 1,
-            editable: true,
-            filter: 'agTextColumnFilter'
-        },
-        {
-            field: 'email',
-            headerName: 'Email',
-            flex: 1,
-            editable: true,
-            filter: 'agTextColumnFilter'
-        },
-        {
-            field: 'role',
-            headerName: 'Role',
-            flex: 1,
-            editable: true,
-            filter: 'agTextColumnFilter',
-            cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
-                values: ['Admin', 'User', 'Editor', 'Viewer']
-            }
-        },
-        {
-            field: 'status',
-            headerName: 'Status',
-            flex: 1,
-            editable: true,
-            filter: 'agTextColumnFilter',
-            cellEditor: 'agSelectCellEditor',
-            cellEditorParams: {
-                values: ['Active', 'Inactive', 'Pending']
-            }
-        },
-        {
-            field: 'createdAt',
-            headerName: 'Created At',
-            flex: 1,
-            editable: false,
-            filter: 'agDateColumnFilter',
-            valueFormatter: (params) => {
-                return new Date(params.value).toLocaleDateString();
-            }
-        },
-        {
-            headerName: 'Actions',
-            width: 120,
-            cellRenderer: (params: ICellRendererParams) => {
-                return (
-                    <Button
-                        size="small"
-                        color="error"
-                        onClick={() => handleDelete(params.data.id)}
-                    >
-                        Delete
-                    </Button>
-                );
-            }
-        }
-    ];
+    const [gridApi, setGridApi] = useState<any>(null);
 
     // Fetch data from API
     useEffect(() => {
@@ -106,49 +31,87 @@ const AdminDataGrid: React.FC = () => {
                 setLoading(true);
                 setError(null);
 
-                // Use the ApiService to make the authenticated API call
-                const apiEndpoint = '/api/admin/data';
-                const data = await apiService.get<AdminData[]>(apiEndpoint);
+                // Use environment variable for API endpoint
+                const apiEndpoint = `${process.env.REACT_APP_API_BASE_URL}/api/admin/data`;
+                console.log('API Endpoint:', apiEndpoint); // Debug log
 
-                if (isMounted.current) {
-                    setRowData(data);
-                }
+                const data = await apiService.get<AdminData[]>(apiEndpoint);
+                setRowData(data);
             } catch (err) {
                 console.error('Error fetching admin data:', err);
-                if (isMounted.current) {
-                    setError('Failed to load data. Please try again later.');
-                }
+                setError('Failed to load data. Please try again later.');
             } finally {
-                if (isMounted.current) {
-                    setLoading(false);
-                }
+                setLoading(false);
             }
         };
 
         fetchData();
-
-        // Cleanup function
-        return () => {
-            isMounted.current = false;
-        };
     }, [apiService]);
 
-    // Handle grid ready event
-    const onGridReady = (params: GridReadyEvent) => {
-        setGridApi(params.api);
+    // Column Definitions
+    const columnDefs: ColDef[] = [
+        { field: 'id', headerName: 'ID', width: 70, editable: false },
+        { field: 'name', headerName: 'Name', width: 150, editable: true },
+        { field: 'email', headerName: 'Email', width: 200, editable: true },
+        {
+            field: 'role',
+            headerName: 'Role',
+            width: 120,
+            editable: true,
+            cellEditor: 'agSelectCellEditor',
+            cellEditorParams: {
+                values: ['Admin', 'User', 'Editor', 'Viewer']
+            }
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            width: 120,
+            editable: true,
+            cellEditor: 'agSelectCellEditor',
+            cellEditorParams: {
+                values: ['Active', 'Inactive', 'Pending']
+            }
+        },
+        { field: 'lastLogin', headerName: 'Last Login', width: 150, editable: false },
+        { field: 'createdAt', headerName: 'Created At', width: 150, editable: false },
+        {
+            headerName: 'Actions',
+            width: 120,
+            cellRenderer: (params: any) => (
+                <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={() => handleDelete(params.data.id)}
+                >
+                    Delete
+                </Button>
+            )
+        }
+    ];
+
+    // Default column definition
+    const defaultColDef = {
+        sortable: true,
+        filter: true,
+        resizable: true,
+        flex: 1,
     };
 
-    // Handle cell value changed
+    // Grid ready event handler
+    const onGridReady = (params: GridReadyEvent) => {
+        setGridApi(params.api);
+        // Auto-size columns to fit content
+        params.api.sizeColumnsToFit();
+    };
+
+    // Handle cell value changes
     const onCellValueChanged = async (params: any) => {
         try {
             const updatedData = params.data;
-            const apiEndpoint = `/api/admin/data/${updatedData.id}`;
-
-            // Update the data on the server
+            const apiEndpoint = `${process.env.REACT_APP_API_BASE_URL}/api/admin/data/${updatedData.id}`;
             await apiService.put(apiEndpoint, updatedData);
-
-            // Show success message or handle as needed
-            console.log('Data updated successfully');
         } catch (err) {
             console.error('Error updating data:', err);
             // Revert the change in the grid
@@ -156,82 +119,37 @@ const AdminDataGrid: React.FC = () => {
         }
     };
 
-    // Handle adding a new row
+    // Handle adding new row
     const handleAddNew = () => {
-        if (gridApi) {
-            // Create a new empty row
-            const newRow: AdminData = {
-                id: 0, // This will be replaced by the server
-                name: '',
-                email: '',
-                role: 'User',
-                status: 'Active',
-                createdAt: new Date().toISOString()
-            };
-
-            // Add the new row to the grid
-            gridApi.applyTransaction({ add: [newRow] });
-
-            // Start editing the first cell of the new row
-            setTimeout(() => {
-                gridApi.startEditingCell({
-                    rowIndex: 0,
-                    colKey: 'name'
-                });
-            }, 100);
-        }
+        const newRow: AdminData = {
+            id: Date.now(), // Temporary ID
+            name: '',
+            email: '',
+            role: 'User',
+            status: 'Pending',
+            lastLogin: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+        };
+        setRowData([...rowData, newRow]);
     };
 
-    // Handle deleting a row
+    // Handle deleting row
     const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
+        if (window.confirm('Are you sure you want to delete this entry?')) {
             try {
-                const apiEndpoint = `/api/admin/data/${id}`;
-
-                // Delete the data from the server
+                const apiEndpoint = `${process.env.REACT_APP_API_BASE_URL}/api/admin/data/${id}`;
                 await apiService.delete(apiEndpoint);
-
-                // Remove the row from the grid
-                if (gridApi) {
-                    gridApi.applyTransaction({ remove: [{ id }] });
-                }
-
-                // Show success message or handle as needed
-                console.log('Data deleted successfully');
+                setRowData(rowData.filter((row: AdminData) => row.id !== id));
             } catch (err) {
                 console.error('Error deleting data:', err);
-                setError('Failed to delete item. Please try again later.');
+                setError('Failed to delete entry. Please try again.');
             }
-        }
-    };
-
-    // Handle saving a new row
-    const handleSaveNew = async (newData: AdminData) => {
-        try {
-            const apiEndpoint = '/api/admin/data';
-
-            // Save the new data to the server
-            const savedData = await apiService.post(apiEndpoint, newData);
-
-            // Update the grid with the saved data (which includes the server-generated ID)
-            if (gridApi) {
-                gridApi.applyTransaction({
-                    remove: [{ id: 0 }],
-                    add: [savedData]
-                });
-            }
-
-            // Show success message or handle as needed
-            console.log('Data saved successfully');
-        } catch (err) {
-            console.error('Error saving data:', err);
-            setError('Failed to save item. Please try again later.');
         }
     };
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
                 <CircularProgress />
             </Box>
         );
@@ -239,46 +157,50 @@ const AdminDataGrid: React.FC = () => {
 
     if (error) {
         return (
-            <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-            </Alert>
+            <Box p={2}>
+                <Alert severity="error">{error}</Alert>
+            </Box>
         );
     }
 
     return (
-        <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h6">Data Management</Typography>
+        <Box p={2}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h6">Admin Data Management</Typography>
                 <Button
                     variant="contained"
                     color="primary"
                     onClick={handleAddNew}
-                    startIcon={<span>+</span>}
                 >
                     Add New
                 </Button>
             </Box>
-
-            <Box sx={{ flexGrow: 1, height: 'calc(100% - 60px)' }}>
-                <div className="ag-theme-alpine" style={{ height: '100%', width: '100%' }}>
-                    <AgGridReact
-                        rowData={rowData}
-                        columnDefs={columnDefs}
-                        onGridReady={onGridReady}
-                        onCellValueChanged={onCellValueChanged}
-                        rowSelection="multiple"
-                        enableRangeSelection={true}
-                        pagination={true}
-                        paginationPageSize={10}
-                        animateRows={true}
-                        defaultColDef={{
-                            sortable: true,
-                            filter: true,
-                            resizable: true,
-                        }}
-                    />
-                </div>
-            </Box>
+            <div
+                className="ag-theme-alpine"
+                style={{
+                    height: 600,
+                    width: '100%',
+                    '--ag-header-height': '50px',
+                    '--ag-header-foreground-color': '#000',
+                    '--ag-header-background-color': '#f5f5f5',
+                    '--ag-row-hover-color': 'rgba(0, 0, 0, 0.04)',
+                    '--ag-selected-row-background-color': 'rgba(0, 0, 0, 0.08)',
+                } as React.CSSProperties}
+            >
+                <AgGridReact
+                    rowData={rowData}
+                    columnDefs={columnDefs}
+                    defaultColDef={defaultColDef}
+                    onGridReady={onGridReady}
+                    onCellValueChanged={onCellValueChanged}
+                    pagination={true}
+                    paginationPageSize={10}
+                    enableCellTextSelection={true}
+                    rowSelection="multiple"
+                    animateRows={true}
+                    suppressRowClickSelection={true}
+                />
+            </div>
         </Box>
     );
 };

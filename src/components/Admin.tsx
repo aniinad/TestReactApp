@@ -20,7 +20,7 @@ function TabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-                <Box sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ p: 3 }}>
                     {children}
                 </Box>
             )}
@@ -36,29 +36,37 @@ function a11yProps(index: number) {
 }
 
 const Admin: React.FC = () => {
-    const [tabValue, setTabValue] = useState(0);
+    const [value, setValue] = useState(0);
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-        setTabValue(newValue);
+    const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+        setValue(newValue);
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={handleTabChange} aria-label="admin tabs">
+                <Tabs
+                    value={value}
+                    onChange={handleChange}
+                    aria-label="admin tabs"
+                    variant="scrollable"
+                    scrollButtons="auto"
+                >
                     <Tab label="Data Management" {...a11yProps(0)} />
                     <Tab label="User Management" {...a11yProps(1)} />
                     <Tab label="Settings" {...a11yProps(2)} />
                 </Tabs>
             </Box>
-            <TabPanel value={tabValue} index={0}>
+            <TabPanel value={value} index={0}>
                 <AdminDataGrid />
             </TabPanel>
-            <TabPanel value={tabValue} index={1}>
-                <Typography>User Management Content</Typography>
+            <TabPanel value={value} index={1}>
+                <Typography variant="h6">User Management</Typography>
+                <Typography>User management functionality coming soon...</Typography>
             </TabPanel>
-            <TabPanel value={tabValue} index={2}>
-                <Typography>Settings Content</Typography>
+            <TabPanel value={value} index={2}>
+                <Typography variant="h6">Settings</Typography>
+                <Typography>Settings functionality coming soon...</Typography>
             </TabPanel>
         </Box>
     );

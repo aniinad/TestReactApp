@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import Navbar from './components/Navbar';
@@ -13,7 +13,6 @@ import UserList from './components/UserList';
 import Profile from './components/Profile';
 import TableauDashboardContainer from './components/TableauDashboardContainer';
 import Admin from './components/Admin';
-import ProtectedRoute from './components/ProtectedRoute';
 
 // Create a theme instance
 const theme = createTheme({
@@ -27,10 +26,14 @@ const theme = createTheme({
     },
 });
 
+// Protected Route component
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
 // Main app content that uses the auth context
 const AppContent: React.FC = () => {
-    const { isAuthenticated } = useAuth();
-
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <CssBaseline />
