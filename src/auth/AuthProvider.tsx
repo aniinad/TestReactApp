@@ -53,9 +53,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Add event callback for handling redirects
         const callbackId = msalInstance.addEventCallback((event: EventMessage) => {
             if (event.eventType === EventType.LOGIN_SUCCESS) {
-                const account = event.payload?.account;
-                if (account) {
-                    setUser(account);
+                const result = event.payload as AuthenticationResult;
+                if (result.account) {
+                    setUser(result.account);
                     setIsAuthenticated(true);
                     // Get token after successful login
                     getAccessToken().then(token => {
