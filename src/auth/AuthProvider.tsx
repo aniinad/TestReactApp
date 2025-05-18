@@ -32,6 +32,8 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [user, setUser] = useState<AccountInfo | null>(null);
+    const [cachedToken, setCachedToken] = useState<string | null>(null);
+    const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -40,6 +42,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (accounts.length > 0) {
             setUser(accounts[0]);
             setIsAuthenticated(true);
+            // Get initial token
+            getAccessToken().then(token => {
+                setCachedToken(token);
+                // Set token expiration (typically 1 hour from now)
+                setTokenExpiration(Date.now() + 3600000);
+            });
         }
 
         // Add event callback for handling redirects
@@ -49,6 +57,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (account) {
                     setUser(account);
                     setIsAuthenticated(true);
+                    // Get token after successful login
+                    getAccessToken().then(token => {
+                        setCachedToken(token);
+                        setTokenExpiration(Date.now() + 3600000);
+                    });
                 }
             }
         });
@@ -77,10 +90,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         msalInstance.logoutRedirect();
         setUser(null);
         setIsAuthenticated(false);
+        setCachedToken(null);
+        setTokenExpiration(null);
     };
 
     const getAccessToken = async (): Promise<string> => {
         try {
+            // Check if we have a valid cached token
+            if (cachedToken && tokenExpiration && Date.now() < tokenExpiration) {
+                return cachedToken;
+            }
+
             const account = msalInstance.getAllAccounts()[0];
             if (!account) {
                 throw new Error('No active account');
@@ -90,6 +110,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...loginRequest,
                 account: account
             });
+
+            // Cache the new token
+            setCachedToken(response.accessToken);
+            setTokenExpiration(Date.now() + 3600000); // 1 hour from now
 
             return response.accessToken;
         } catch (error) {
