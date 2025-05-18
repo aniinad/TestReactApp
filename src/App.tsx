@@ -1,7 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { AuthProvider, useAuth } from './auth/AuthProvider';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './auth/AuthProvider';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import { Box } from '@mui/material';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthProvider';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import DataGrid from './components/DataGrid';
@@ -13,32 +18,39 @@ import UserList from './components/UserList';
 import Profile from './components/Profile';
 import TableauDashboardContainer from './components/TableauDashboardContainer';
 import Admin from './components/Admin';
-
-// Create a theme instance
-const theme = createTheme({
-    palette: {
-        primary: {
-            main: '#1976d2',
-        },
-        secondary: {
-            main: '#dc004e',
-        },
-    },
-});
+import PopupBlockedAlert from './components/PopupBlockedAlert';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { isAuthenticated } = useAuth();
-    return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+    const { isAuthenticated, isInitialized } = useAuth();
+
+    if (!isInitialized) {
+        return <div>Loading...</div>;
+    }
+
+    if (!isAuthenticated) {
+        return <Navigate to="/" />;
+    }
+
+    return <>{children}</>;
 };
 
-// Main app content that uses the auth context
+// AppContent component that uses auth context
 const AppContent: React.FC = () => {
+    const { isAuthenticated, isInitialized, popupBlocked } = useAuth();
+
+    if (!isInitialized) {
+        return <div>Loading...</div>;
+    }
+
+    if (popupBlocked) {
+        return <PopupBlockedAlert />;
+    }
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <CssBaseline />
             <Navbar />
-            <Box component="main" sx={{ flexGrow: 1, p: 3, height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+            <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
                 <Routes>
                     <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                     <Route path="/data-grid" element={<ProtectedRoute><DataGrid /></ProtectedRoute>} />
@@ -59,13 +71,14 @@ const AppContent: React.FC = () => {
 // Main App component
 const App: React.FC = () => {
     return (
-        <AuthProvider>
+        <BrowserRouter>
             <ThemeProvider theme={theme}>
-                <Router>
+                <CssBaseline />
+                <AuthProvider>
                     <AppContent />
-                </Router>
+                </AuthProvider>
             </ThemeProvider>
-        </AuthProvider>
+        </BrowserRouter>
     );
 };
 
