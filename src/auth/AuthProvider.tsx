@@ -47,6 +47,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => {
         const initializeAuth = async () => {
             try {
+                console.log('Starting auth initialization...');
+
                 // Initialize MSAL
                 await msalInstance.initialize();
                 console.log('MSAL initialized successfully');
@@ -70,10 +72,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     // Set token expiration (typically 1 hour from now)
                     setTokenExpiration(Date.now() + 3600000);
                 } else {
-                    console.log('No accounts found');
+                    console.log('No accounts found, triggering login...');
+                    // If no accounts found, trigger login
+                    await login();
                 }
             } catch (error) {
                 console.error('Error initializing auth:', error);
+                // If there's an error, try to login
+                try {
+                    await login();
+                } catch (loginError) {
+                    console.error('Error during login:', loginError);
+                }
             } finally {
                 setIsInitialized(true);
             }
@@ -109,8 +119,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async () => {
         try {
+            console.log('Login function called...');
+
             // Ensure MSAL is initialized
             if (!msalInstance.getActiveAccount()) {
+                console.log('MSAL not initialized, initializing...');
                 await msalInstance.initialize();
             }
 
@@ -120,13 +133,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (accounts.length > 0) {
                 const account = accounts[0] as ExtendedAccountInfo;
+                console.log('Found existing account:', account);
                 setUser(account);
                 setIsAuthenticated(true);
                 return;
             }
 
             // If not logged in, redirect to Microsoft login
-            console.log('Redirecting to login...');
+            console.log('No accounts found, redirecting to Microsoft login...');
             await msalInstance.loginRedirect(loginRequest);
         } catch (error) {
             console.error('Login error:', error);
