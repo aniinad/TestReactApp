@@ -7,11 +7,17 @@ import { useNavigate } from 'react-router-dom';
 // Initialize MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
 
+// Extend AccountInfo with additional properties
+interface ExtendedAccountInfo extends AccountInfo {
+    userPrincipalName?: string;
+    authenticationMethods?: string[];
+}
+
 // Create a context for authentication
 interface AuthContextType {
     isAuthenticated: boolean;
     isInitialized: boolean;
-    user: AccountInfo | null;
+    user: ExtendedAccountInfo | null;
     login: () => Promise<void>;
     logout: () => void;
     getAccessToken: () => Promise<string>;
@@ -33,7 +39,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isInitialized, setIsInitialized] = useState<boolean>(false);
-    const [user, setUser] = useState<AccountInfo | null>(null);
+    const [user, setUser] = useState<ExtendedAccountInfo | null>(null);
     const [cachedToken, setCachedToken] = useState<string | null>(null);
     const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
     const navigate = useNavigate();
@@ -44,7 +50,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 // Check if user is already signed in
                 const accounts = msalInstance.getAllAccounts();
                 if (accounts.length > 0) {
-                    setUser(accounts[0]);
+                    const account = accounts[0] as ExtendedAccountInfo;
+                    setUser(account);
                     setIsAuthenticated(true);
                     // Get initial token
                     const token = await getAccessToken();
@@ -66,7 +73,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (event.eventType === EventType.LOGIN_SUCCESS) {
                 const result = event.payload as AuthenticationResult;
                 if (result.account) {
-                    setUser(result.account);
+                    const account = result.account as ExtendedAccountInfo;
+                    setUser(account);
                     setIsAuthenticated(true);
                     // Get token after successful login
                     getAccessToken().then(token => {
