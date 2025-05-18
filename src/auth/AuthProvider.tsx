@@ -75,11 +75,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async () => {
         try {
-            const response = await msalInstance.loginRedirect(loginRequest);
-            if (response) {
-                setUser(response.account);
-                setIsAuthenticated(true);
-            }
+            // loginRedirect doesn't return a response because it redirects the page
+            await msalInstance.loginRedirect(loginRequest);
+            // The response will be handled in the event callback
         } catch (error) {
             console.error('Login error:', error);
             throw error;
