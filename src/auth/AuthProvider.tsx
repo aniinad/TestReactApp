@@ -10,6 +10,7 @@ const msalInstance = new PublicClientApplication(msalConfig);
 // Create a context for authentication
 interface AuthContextType {
     isAuthenticated: boolean;
+    isInitialized: boolean;
     user: AccountInfo | null;
     login: () => Promise<void>;
     logout: () => void;
@@ -31,24 +32,34 @@ export const useAuth = () => {
 // Auth provider component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [isInitialized, setIsInitialized] = useState<boolean>(false);
     const [user, setUser] = useState<AccountInfo | null>(null);
     const [cachedToken, setCachedToken] = useState<string | null>(null);
     const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if user is already signed in
-        const accounts = msalInstance.getAllAccounts();
-        if (accounts.length > 0) {
-            setUser(accounts[0]);
-            setIsAuthenticated(true);
-            // Get initial token
-            getAccessToken().then(token => {
-                setCachedToken(token);
-                // Set token expiration (typically 1 hour from now)
-                setTokenExpiration(Date.now() + 3600000);
-            });
-        }
+        const initializeAuth = async () => {
+            try {
+                // Check if user is already signed in
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length > 0) {
+                    setUser(accounts[0]);
+                    setIsAuthenticated(true);
+                    // Get initial token
+                    const token = await getAccessToken();
+                    setCachedToken(token);
+                    // Set token expiration (typically 1 hour from now)
+                    setTokenExpiration(Date.now() + 3600000);
+                }
+                setIsInitialized(true);
+            } catch (error) {
+                console.error('Error initializing auth:', error);
+                setIsInitialized(true);
+            }
+        };
+
+        initializeAuth();
 
         // Add event callback for handling redirects
         const callbackId = msalInstance.addEventCallback((event: EventMessage) => {
@@ -126,6 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const value = {
         isAuthenticated,
+        isInitialized,
         user,
         login,
         logout,
