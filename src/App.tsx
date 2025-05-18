@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { ThemeProvider } from '@mui/material/styles';
@@ -22,14 +22,20 @@ import PopupBlockedAlert from './components/PopupBlockedAlert';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { isAuthenticated, isInitialized } = useAuth();
+    const { isAuthenticated, isInitialized, login } = useAuth();
+
+    useEffect(() => {
+        if (isInitialized && !isAuthenticated) {
+            login();
+        }
+    }, [isInitialized, isAuthenticated, login]);
 
     if (!isInitialized) {
         return <div>Loading...</div>;
     }
 
     if (!isAuthenticated) {
-        return <Navigate to="/" />;
+        return <div>Redirecting to login...</div>;
     }
 
     return <>{children}</>;

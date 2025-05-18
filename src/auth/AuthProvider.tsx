@@ -47,10 +47,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => {
         const initializeAuth = async () => {
             try {
+                // Handle redirect promise
+                await msalInstance.handleRedirectPromise();
+
                 // Check if user is already signed in
                 const accounts = msalInstance.getAllAccounts();
+                console.log('Available accounts:', accounts); // Debug log
+
                 if (accounts.length > 0) {
                     const account = accounts[0] as ExtendedAccountInfo;
+                    console.log('Setting user account:', account); // Debug log
                     setUser(account);
                     setIsAuthenticated(true);
                     // Get initial token
@@ -58,10 +64,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     setCachedToken(token);
                     // Set token expiration (typically 1 hour from now)
                     setTokenExpiration(Date.now() + 3600000);
+                } else {
+                    console.log('No accounts found'); // Debug log
                 }
-                setIsInitialized(true);
             } catch (error) {
                 console.error('Error initializing auth:', error);
+            } finally {
                 setIsInitialized(true);
             }
         };
@@ -70,8 +78,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Add event callback for handling redirects
         const callbackId = msalInstance.addEventCallback((event: EventMessage) => {
+            console.log('MSAL Event:', event.eventType); // Debug log
             if (event.eventType === EventType.LOGIN_SUCCESS) {
                 const result = event.payload as AuthenticationResult;
+                console.log('Login success result:', result); // Debug log
                 if (result.account) {
                     const account = result.account as ExtendedAccountInfo;
                     setUser(account);
@@ -94,9 +104,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async () => {
         try {
-            // loginRedirect doesn't return a response because it redirects the page
+            // Check if we're already logged in
+            const accounts = msalInstance.getAllAccounts();
+            console.log('Login check - Available accounts:', accounts); // Debug log
+
+            if (accounts.length > 0) {
+                const account = accounts[0] as ExtendedAccountInfo;
+                setUser(account);
+                setIsAuthenticated(true);
+                return;
+            }
+
+            // If not logged in, redirect to Microsoft login
+            console.log('Redirecting to login...'); // Debug log
             await msalInstance.loginRedirect(loginRequest);
-            // The response will be handled in the event callback
         } catch (error) {
             console.error('Login error:', error);
             throw error;
