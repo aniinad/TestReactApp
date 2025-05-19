@@ -41,6 +41,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <>{children}</>;
 };
 
+// Base URL handler component
+const BaseUrlHandler: React.FC = () => {
+    const { isAuthenticated, isInitialized, redirectTo } = useAuth();
+
+    useEffect(() => {
+        if (isInitialized) {
+            if (isAuthenticated) {
+                // Redirect to admin page if authenticated
+                redirectTo('/admin');
+            } else {
+                // Redirect to login if not authenticated
+                redirectTo('/');
+            }
+        }
+    }, [isInitialized, isAuthenticated, redirectTo]);
+
+    return <div>Redirecting...</div>;
+};
+
 // AppContent component that uses auth context
 const AppContent: React.FC = () => {
     const { isAuthenticated, isInitialized, popupBlocked } = useAuth();
@@ -58,16 +77,16 @@ const AppContent: React.FC = () => {
             <Navbar />
             <Box component="main" sx={{ flexGrow: 1, p: 3, overflow: 'auto' }}>
                 <Routes>
-                    <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                    <Route path="/data-grid" element={<ProtectedRoute><DataGrid /></ProtectedRoute>} />
-                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/tableau" element={<ProtectedRoute><TableauDashboardContainer /></ProtectedRoute>} />
-                    <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/api-example" element={<ProtectedRoute><ApiExample /></ProtectedRoute>} />
-                    <Route path="/data-loader" element={<ProtectedRoute><DataLoader /></ProtectedRoute>} />
-                    <Route path="/users" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
-                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/" element={<BaseUrlHandler />} />
+                    <Route path="/dashboard" element={<TableauDashboardContainer />} />
+                    <Route
+                        path="/admin"
+                        element={
+                            <ProtectedRoute>
+                                <Admin />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Routes>
             </Box>
         </Box>

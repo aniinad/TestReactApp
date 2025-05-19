@@ -134,15 +134,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.log('Redirecting to login...');
             try {
                 await msalInstance.loginRedirect(loginRequest);
-            } catch (error) {
+            } catch (error: unknown) {
                 // If it's a BrowserAuthError, it's likely because we're already in a redirect flow
-                if (error.name === 'BrowserAuthError') {
+                if (error instanceof Error && error.name === 'BrowserAuthError') {
                     console.log('BrowserAuthError caught - likely already in redirect flow');
                     return;
                 }
                 throw error;
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Login error:', error);
             throw error;
         }
