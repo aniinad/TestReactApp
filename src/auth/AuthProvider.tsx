@@ -119,29 +119,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async () => {
         try {
-            console.log('Login function called...');
-
-            // Ensure MSAL is initialized
-            if (!msalInstance.getActiveAccount()) {
-                console.log('MSAL not initialized, initializing...');
-                await msalInstance.initialize();
-            }
-
             // Check if we're already logged in
             const accounts = msalInstance.getAllAccounts();
             console.log('Login check - Available accounts:', accounts);
 
             if (accounts.length > 0) {
                 const account = accounts[0] as ExtendedAccountInfo;
-                console.log('Found existing account:', account);
                 setUser(account);
                 setIsAuthenticated(true);
                 return;
             }
 
             // If not logged in, redirect to Microsoft login
-            console.log('No accounts found, redirecting to Microsoft login...');
-            await msalInstance.loginRedirect(loginRequest);
+            console.log('Redirecting to login...');
+            try {
+                await msalInstance.loginRedirect(loginRequest);
+            } catch (error) {
+                // If it's a BrowserAuthError, it's likely because we're already in a redirect flow
+                if (error.name === 'BrowserAuthError') {
+                    console.log('BrowserAuthError caught - likely already in redirect flow');
+                    return;
+                }
+                throw error;
+            }
         } catch (error) {
             console.error('Login error:', error);
             throw error;
@@ -160,26 +160,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             // Check if we have a valid cached token
             if (cachedToken && tokenExpiration && Date.now() < tokenExpiration) {
+                console.log('Using cached token');
                 return cachedToken;
             }
 
+            console.log('Getting new token...');
             const account = msalInstance.getAllAccounts()[0];
             if (!account) {
+                console.error('No active account found');
                 throw new Error('No active account');
             }
 
-            const response = await msalInstance.acquireTokenSilent({
-                ...loginRequest,
-                account: account
-            });
+            try {
+                const response = await msalInstance.acquireTokenSilent({
+                    ...loginRequest,
+                    account: account
+                });
 
-            // Cache the new token
-            setCachedToken(response.accessToken);
-            setTokenExpiration(Date.now() + 3600000); // 1 hour from now
+                console.log('Token acquired successfully');
+                // Cache the new token
+                setCachedToken(response.accessToken);
+                setTokenExpiration(Date.now() + 3600000); // 1 hour from now
 
-            return response.accessToken;
+                return response.accessToken;
+            } catch (silentError) {
+                console.log('Silent token acquisition failed, trying popup...');
+                // If silent token acquisition fails, try popup
+                const response = await msalInstance.acquireTokenPopup({
+                    ...loginRequest,
+                    account: account
+                });
+
+                console.log('Token acquired via popup');
+                // Cache the new token
+                setCachedToken(response.accessToken);
+                setTokenExpiration(Date.now() + 3600000); // 1 hour from now
+
+                return response.accessToken;
+            }
         } catch (error) {
             console.error('Error getting access token:', error);
+            // If all token acquisition methods fail, trigger a new login
+            await login();
             throw error;
         }
     };
