@@ -11,7 +11,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '../auth/AuthProvider';
 
 const Navbar: React.FC = () => {
-    const { isAuthenticated, user, login, logout, role, setRole } = useAuth();
+    const { isAuthenticated, user, login, logout, role, setRole, originalRole } = useAuth();
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [impersonateAnchorEl, setImpersonateAnchorEl] = useState<null | HTMLElement>(null);
@@ -124,13 +124,15 @@ const Navbar: React.FC = () => {
                             >
                                 Users
                             </Button>
-                            <Button
-                                color="inherit"
-                                onClick={handleImpersonateClick}
-                                startIcon={<AdminPanelSettingsIcon />}
-                            >
-                                Impersonation ({role})
-                            </Button>
+                            {originalRole === 'Admin' && (
+                                <Button
+                                    color="inherit"
+                                    onClick={handleImpersonateClick}
+                                    startIcon={<AdminPanelSettingsIcon />}
+                                >
+                                    Impersonation ({role})
+                                </Button>
+                            )}
                         </Box>
 
                         <IconButton
@@ -168,17 +170,19 @@ const Navbar: React.FC = () => {
                             <MenuItem onClick={handleLogout}>Logout</MenuItem>
                         </Menu>
 
-                        <DropdownMenu
-                            anchorEl={impersonateAnchorEl}
-                            open={Boolean(impersonateAnchorEl)}
-                            onClose={handleImpersonateClose}
-                        >
-                            <RadioGroup value={role} onChange={handleRoleChange} sx={{ pl: 2, pr: 2 }}>
-                                {roles.map((r) => (
-                                    <FormControlLabel key={r} value={r} control={<Radio />} label={r} />
-                                ))}
-                            </RadioGroup>
-                        </DropdownMenu>
+                        {originalRole === 'Admin' && (
+                            <DropdownMenu
+                                anchorEl={impersonateAnchorEl}
+                                open={Boolean(impersonateAnchorEl)}
+                                onClose={handleImpersonateClose}
+                            >
+                                <RadioGroup value={role} onChange={handleRoleChange} sx={{ pl: 2, pr: 2 }}>
+                                    {roles.map((r) => (
+                                        <FormControlLabel key={r} value={r} control={<Radio />} label={r} />
+                                    ))}
+                                </RadioGroup>
+                            </DropdownMenu>
+                        )}
                     </>
                 ) : (
                     <Box sx={{ marginLeft: 'auto' }}>

@@ -22,6 +22,9 @@ interface AuthContextType {
     logout: () => void;
     getAccessToken: () => Promise<string>;
     redirectTo: (path: string) => void;
+    role: string;
+    setRole: (role: string) => void;
+    originalRole: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +45,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<ExtendedAccountInfo | null>(null);
     const [cachedToken, setCachedToken] = useState<string | null>(null);
     const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
+    const [role, setRole] = useState<string>('User');
+    const [originalRole, setOriginalRole] = useState<string>('User');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -217,7 +222,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         logout,
         getAccessToken,
-        redirectTo
+        redirectTo,
+        role,
+        setRole,
+        originalRole
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
