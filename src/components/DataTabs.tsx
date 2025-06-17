@@ -4,6 +4,12 @@ import { GridData } from '../types/grid';
 import DataGrid from './DataGrid';
 import DataForm from './DataForm';
 import { ColDef } from 'ag-grid-community';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { TextField, Select, MenuItem, InputLabel, FormControl, Button } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import AdvancedGridPanel from './AdvancedGridPanel';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -141,6 +147,7 @@ const DataTabs: React.FC = () => {
                     <Tab label="Type 2 Data" />
                     <Tab label="Type 3 Data" />
                     <Tab label="External Page" />
+                    <Tab label="Advanced Grid" />
                 </Tabs>
             </Box>
 
@@ -257,6 +264,10 @@ const DataTabs: React.FC = () => {
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 />
                 </Box>
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={4}>
+                <AdvancedGridPanel />
             </TabPanel>
         </Box>
     );
