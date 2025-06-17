@@ -140,6 +140,7 @@ const DataTabs: React.FC = () => {
                     <Tab label="Type 1 Data" />
                     <Tab label="Type 2 Data" />
                     <Tab label="Type 3 Data" />
+                    <Tab label="External Page" />
                 </Tabs>
             </Box>
 
@@ -242,6 +243,19 @@ const DataTabs: React.FC = () => {
                             </>
                         )}
                     </Box>
+                </Box>
+            </TabPanel>
+
+            <TabPanel value={activeTab} index={3}>
+                <Box sx={{ width: '100%', height: '80vh' }}>
+                    <iframe
+                        src="https://www.example.com"
+                        title="External Page"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 'none' }}
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    />
                 </Box>
             </TabPanel>
         </Box>
