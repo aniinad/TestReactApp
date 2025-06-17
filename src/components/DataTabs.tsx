@@ -248,14 +248,14 @@ const DataTabs: React.FC = () => {
 
             <TabPanel value={activeTab} index={3}>
                 <Box sx={{ width: '100%', height: '80vh' }}>
-                    <iframe
-                        src="https://www.example.com"
-                        title="External Page"
-                        width="100%"
-                        height="100%"
-                        style={{ border: 'none' }}
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                    />
+                                <iframe
+                src="https://www.example.com?embed=true"
+                title="External Page"
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
                 </Box>
             </TabPanel>
         </Box>
